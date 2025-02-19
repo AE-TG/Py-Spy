@@ -2,26 +2,19 @@
   "name": "spy",
   "displayName": "Spy",
   "description": "Automated tool for analysing and testing Python code snippets in real time.",
-  "version": "0.0.1",
+  "icon": "assets/play.png",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.96.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "spy.startautocompile",
-        "title": "Run SPY"
-      },
-      {
-        "command": "spy.stopautocompile",
-        "title": "Stop SPY"
-      }
-    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -32,14 +25,17 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.96.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/vscode": "^1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
-    "eslint": "^9.16.0",
-    "typescript": "^5.7.2",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.16.0",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "python-shell": "^5.0.0"
   }
 }

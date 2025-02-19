@@ -1,19 +1,28 @@
 import * as vscode from 'vscode';
 
-export function scan() {
-// TODO look for @spy\ndef
-// TODO actually do ui
 
-     
-
+let highlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
+export function createDecorations(ctx: vscode.ExtensionContext) {
     // set up pink highlighting for editors SPY decorators
     const renderOptions = {} as vscode.DecorationRenderOptions;
     renderOptions.backgroundColor = "#FF22AA66";
-    //TODO - gutter button icon
-    // renderOptions.gutterIconPath
+    renderOptions.gutterIconPath = ctx.asAbsolutePath("assets/play_16.png");
     renderOptions.gutterIconSize = "auto";
-    const decoType = vscode.window.createTextEditorDecorationType(renderOptions);
+    renderOptions.isWholeLine = true;
+    highlight = vscode.window.createTextEditorDecorationType(renderOptions);
+}
 
+let updateTimer: NodeJS.Timeout | undefined = undefined;
+export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 1000) {
+    // limit the UI updates to when the user is inactive for 1000ms or longer
+    if (updateTimer) {
+        clearTimeout(updateTimer);
+        updateTimer = undefined;
+    }
+    updateTimer = setTimeout(applyDecorations, delay, ctx);
+}
+
+function applyDecorations(ctx: vscode.ExtensionContext) {
     // get all the open editor windows that are python files with SPY decorators
     vscode.window.visibleTextEditors.forEach(ed => {
         let doc = ed.document;
@@ -30,9 +39,9 @@ export function scan() {
                 }
             }
             
-            //TODO - this increases the deco brightness over time due to transparency overwrites, as if decotype is not matched.
-            ed.setDecorations(decoType, spyDecoratorRanges);
+            // Remove old decorations before applying new ones.
+            ed.setDecorations(highlight, []);
+            ed.setDecorations(highlight, spyDecoratorRanges);
         }
     });
-
 }
