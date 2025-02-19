@@ -1,33 +1,39 @@
 import * as vscode from 'vscode';
 import * as spyInputs from './spyInputs';
 import * as spyUI from './spyUI';
+import { PythonShell } from 'python-shell'
 
 let intervalID: NodeJS.Timeout;
-export function run(enable: boolean, intervalSeconds: number = 15 ) {
+export function run(ctx: vscode.ExtensionContext, enable: boolean, intervalSeconds: number = 15) {
     if (intervalID) {
         console.log("stopping spy");
         clearInterval(intervalID);
     }
     if (enable) {
         console.log("starting spy");
-        runAll();
+        runAll(ctx);
         intervalID = setInterval(() => {
-            runAll()
+            runAll(ctx)
         }, intervalSeconds * 1000);
     }
 }
 
-function runAll() {
-    // Add extension UI elements.
-    spyUI.scan();
+export function setupUI(ctx: vscode.ExtensionContext) {
+    spyUI.createDecorations(ctx);
+    spyUI.updateDecorations(ctx, 1);
+}
+export function scanUI(ctx: vscode.ExtensionContext) {
+    spyUI.updateDecorations(ctx, 1000);
+}
 
+function runAll(ctx: vscode.ExtensionContext) {
     //TODO check timing loop and adjust or run on user trigger
 
     // Precompile python code as a simple way to check syntax errors.
     pyCompile();
 
     // Perform static analysis.
-    analyze();
+    analyze(ctx);
     //TODO yes this is unbelievably drastically simplified for now
     let decoratedFns: Array<(data: string) => void> = [];
     decoratedFns.push(pyCompile);
@@ -59,7 +65,22 @@ function pyCompile() {
     //TODO AST here?
 }
 
-//TODO - nothing below this line is real
+function analyze(ctx: vscode.ExtensionContext) {
+    let wsPath = vscode.workspace.rootPath;
+    let options = {
+        scriptPath: ctx.extensionPath,
+        args: ["-f", wsPath+"/__pycache__/main.cpython-312.pyc"]
+    };
+    PythonShell.run("src/spyMarshal.py", options).then(messages => {
+        messages.forEach(msg => {
+            console.log(msg);
+        });
+    });
+    
+    //TODO
+    return false;
+}
+
 function getStatistics() {
     //TODO complexity
     //TODO code coverage
@@ -69,8 +90,3 @@ function getStatistics() {
     //TODO timing?
     return 0;
 }
-
-function analyze() {
-    return false;
-}
-

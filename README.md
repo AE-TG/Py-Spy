@@ -1,20 +1,40 @@
-# spy README
+# **spy** README
 
 This is the README for your extension "spy". After writing up a brief description, we recommend including the following sections.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Automatically attaches to documents in workspaces with the python language active
+- Highlights instances of the `@spy` decorator
+    - Does NOT yet provide a definition for the decorator
+- Collates "interesting" data values for plain-old-data function arguments to use as test inputs
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Extension should automatically install the required **Python-Shell** package from **npm**.
+
+## Implementation Details
+
+As **spy** is a learning experiment for writing VSCode extensions, it's worth documenting how it works.
+1. Extension Setup
+- The extension registers itself with an activation event of "onLanguage:python". Thus when VSCode opens a file and loads the user's language spec for python for the first time in a session, `extension.ts::activate()` is executed.
+- `activate()` performs the following things:
+    - First time setup (defining some values for later use)
+    - Registering UI events (`onDidChangeActiveTextEditor` and `onDidChangeTextDocument`) to run UI updates only when potentially useful
+    - Starting a thread to run the rest of the **spy** functionality every 15 seconds
+2. Structure
+- `package.json`: Extension manifest and description
+- `src/extension.ts`: entrypoint
+- `src/spy.ts`: Top-level file for **spy** features. This currently includes the 15-second loop which compiles python files found in the workspace as a basic syntax check.
+- `src/spyInputs.ts`: Manages the creation of "interesting" inputs for input checking functions.
+- `src/spyUI.ts`: Manages the creation and application of VSCode UI elements for the extension using a `vscode.TextEditorDecorationType`.
+- `src/spyMarshal.py`: Python script for the marshaling of python bytecode, used to inspect functions as part of the testing features.
+3. UI
+- 
+4. Analysis
+- TBD
+5. Testing
+- TBD
 
 ## Extension Settings
 
@@ -26,14 +46,6 @@ This extension contributes the following settings:
 
 * `myExtension.enable`: Enable/disable this extension.
 * `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
 
 ### 1.0.0
 
@@ -47,7 +59,7 @@ Fixed issue #.
 
 Added features X, Y, and Z.
 
----
+
 
 ## Following extension guidelines
 
