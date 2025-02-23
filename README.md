@@ -11,7 +11,9 @@ This is the README for your extension "spy". After writing up a brief descriptio
 
 ## Requirements
 
-Extension should automatically install the required **Python-Shell** package from **npm**.
+- **Visual Studio Code**
+- **Node.js**
+- Extension should automatically install the required **Python-Shell** package from **npm**.
 
 ## Implementation Details
 
@@ -30,7 +32,7 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 - `src/spyUI.ts`: Manages the creation and application of VSCode UI elements for the extension using a `vscode.TextEditorDecorationType`.
 - `src/spyMarshal.py`: Python script for the marshaling of python bytecode, used to inspect functions as part of the testing features.
 3. UI
-- 
+- TBD
 4. Analysis
 - TBD
 5. Testing
@@ -47,18 +49,14 @@ This extension contributes the following settings:
 * `myExtension.enable`: Enable/disable this extension.
 * `myExtension.thing`: Set to `blah` to do something.
 
-### 1.0.0
 
-Initial release of ...
 
-### 1.0.1
 
-Fixed issue #.
 
-### 1.1.0
 
-Added features X, Y, and Z.
-
+## Building and Running From Source
+1. Open a new Visual Studio Code workspace in the repository directory.
+2. Press `F5` to start a new debug session with PySpy running!
 
 
 ## Following extension guidelines
@@ -67,17 +65,3 @@ Ensure that you've read through the extensions guidelines and follow the best pr
 
 * [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
 
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
