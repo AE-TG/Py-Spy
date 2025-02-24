@@ -19,11 +19,11 @@ export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 
         clearTimeout(updateTimer);
         updateTimer = undefined;
     }
-    updateTimer = setTimeout(applyDecorations, delay, ctx);
+    updateTimer = setTimeout(applyDecorations, delay);
 }
 
-function applyDecorations(ctx: vscode.ExtensionContext) {
-    // get all the open editor windows that are python files with SPY decorators
+function applyDecorations() {
+    // get only the open editor windows that are python files with SPY decorators
     vscode.window.visibleTextEditors.forEach(ed => {
         let doc = ed.document;
         if (doc.fileName.endsWith(".py")) {
