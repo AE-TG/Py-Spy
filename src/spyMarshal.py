@@ -1,6 +1,5 @@
 import argparse
 import marshal
-import types
 
 def split_module(m):
     return (m.co_consts)
