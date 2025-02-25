@@ -3,7 +3,7 @@
   "displayName": "Spy",
   "description": "Automated tool for analysing and testing Python code snippets in real time.",
   "icon": "assets/play.png",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.96.0"
   },

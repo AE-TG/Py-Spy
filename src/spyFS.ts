@@ -43,6 +43,5 @@ async function findSpyDecorators() {
 
 function trimFunctionName(line: string) {
     let rv: string = line.split("def ")[1].split("(")[0];
-    console.log(rv);
     return rv;
 }
