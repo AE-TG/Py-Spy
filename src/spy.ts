@@ -27,6 +27,18 @@ export function setupUI(ctx: vscode.ExtensionContext) {
 export function scanUI(ctx: vscode.ExtensionContext) {
     spyUI.updateDecorations(ctx, 1000);
 }
+export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) {
+    for (let highlight of spyUI.getSpyDecos()) {
+        if (highlight[0] == file) {
+            if (highlight[1].contains(pos)) {
+                // TODO
+                // spyCC hover
+                break;
+            }
+        }
+    };
+    return null;
+}
 
 function runAll(ctx: vscode.ExtensionContext) {
     //TODO check timing loop and adjust or run on user trigger

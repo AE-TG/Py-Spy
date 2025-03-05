@@ -20,6 +20,11 @@ export function activate(context: vscode.ExtensionContext) {
 			spy.scanUI(context);
 		}
 	}, null, context.subscriptions);
+	vscode.languages.registerHoverProvider('python', {
+		provideHover(document, position, token) {
+			return spy.provideHover(document, position, token);
+		}
+	});
 
 	spy.run(context, true);
 }

@@ -1,15 +1,27 @@
 import * as vscode from 'vscode';
 
 
-let highlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
+// set up decoration types for SPY callouts in editor
+let pinkHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
+let greenFaintHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
+let redFaintHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
 export function createDecorations(ctx: vscode.ExtensionContext) {
-    // set up pink highlighting for editors SPY decorators
-    const renderOptions = {} as vscode.DecorationRenderOptions;
-    renderOptions.backgroundColor = "#FF22AA66";
-    renderOptions.gutterIconPath = ctx.asAbsolutePath("assets/play_16.png");
-    renderOptions.gutterIconSize = "auto";
-    renderOptions.isWholeLine = true;
-    highlight = vscode.window.createTextEditorDecorationType(renderOptions);
+    const pinkRenderOptions = {} as vscode.DecorationRenderOptions;
+    pinkRenderOptions.backgroundColor = "#FF22AA77";
+    pinkRenderOptions.gutterIconPath = ctx.asAbsolutePath("assets/play_16.png");
+    pinkRenderOptions.gutterIconSize = "auto";
+    pinkRenderOptions.isWholeLine = true;
+    pinkHighlight = vscode.window.createTextEditorDecorationType(pinkRenderOptions);
+
+    const greenFaintRenderOptions = {} as vscode.DecorationRenderOptions;
+    greenFaintRenderOptions.backgroundColor = "#00AA0022";
+    greenFaintRenderOptions.isWholeLine = true;
+    greenFaintHighlight = vscode.window.createTextEditorDecorationType(greenFaintRenderOptions);
+
+    const redFaintRenderOptions = {} as vscode.DecorationRenderOptions;
+    redFaintRenderOptions.backgroundColor = "#BB000022";
+    redFaintRenderOptions.isWholeLine = true;
+    redFaintHighlight = vscode.window.createTextEditorDecorationType(redFaintRenderOptions);
 }
 
 let updateTimer: NodeJS.Timeout | undefined = undefined;
@@ -22,9 +34,16 @@ export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 
     updateTimer = setTimeout(applyDecorations, delay);
 }
 
+type spyDeco = [file: vscode.TextDocument, range: vscode.Range];
+let spyDecoList: spyDeco[] = []
+export function getSpyDecos() {
+    return spyDecoList;
+}
+
 function applyDecorations() {
     // get only the open editor windows that are python files with SPY decorators
     vscode.window.visibleTextEditors.forEach(ed => {
+        spyDecoList = [];
         let doc = ed.document;
         if (doc.fileName.endsWith(".py")) {
             console.log("spyUI scanning " + doc.fileName);
@@ -35,13 +54,14 @@ function applyDecorations() {
                     if (doc.lineAt(lineIndex - 1).text.startsWith("@spy")) {
                         console.log("spyUI found decorator on line " + lineIndex);
                         spyDecoratorRanges.push(doc.lineAt(lineIndex - 1).range);
+                        spyDecoList.push([doc, doc.lineAt(lineIndex - 1).range]);
                     }
                 }
             }
-            
+
             // Remove old decorations before applying new ones.
-            ed.setDecorations(highlight, []);
-            ed.setDecorations(highlight, spyDecoratorRanges);
+            ed.setDecorations(pinkHighlight, []);
+            ed.setDecorations(pinkHighlight, spyDecoratorRanges);
         }
     });
 }
