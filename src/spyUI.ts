@@ -34,7 +34,7 @@ export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 
     updateTimer = setTimeout(applyDecorations, delay);
 }
 
-type spyDeco = [file: vscode.TextDocument, range: vscode.Range];
+export type spyDeco = [file: vscode.TextDocument, range: vscode.Range];
 let spyDecoList: spyDeco[] = []
 export function getSpyDecos() {
     return spyDecoList;
