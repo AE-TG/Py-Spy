@@ -7,6 +7,7 @@ This is the README for your extension "spy". After writing up a brief descriptio
 - Automatically attaches to documents in workspaces with the python language active
 - Highlights instances of the `@spy` decorator
     - Does NOT yet provide a definition for the decorator
+    - Mousing over the highlight provides code complexity characteristics as determined by Radon (http://radon.readthedocs.org/).
 - Collates "interesting" data values for plain-old-data function arguments to use as test inputs
 
 ## Requirements
@@ -14,6 +15,7 @@ This is the README for your extension "spy". After writing up a brief descriptio
 - **Visual Studio Code**
 - **Node.js**
 - Extension should automatically install the required **Python-Shell** package from **npm**.
+- Radon integration optional
 
 ## Implementation Details
 
@@ -40,14 +42,7 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+* `spy.RadonInstallLocation`: Path to the Radon executable. Needs to be installed separately (for now) with `pip install radon`. A successful install should list the path; note that Windows expects escaped backslashes.
 
 
 
