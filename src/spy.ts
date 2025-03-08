@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as spyCompile from './spyCompile';
+import * as spyCC from './spyCC';
 import * as spyFS from './spyFS';
 import * as spyInputs from './spyInputs';
 import * as spyUI from './spyUI';
@@ -26,6 +27,18 @@ export function setupUI(ctx: vscode.ExtensionContext) {
 }
 export function scanUI(ctx: vscode.ExtensionContext) {
     spyUI.updateDecorations(ctx, 1000);
+}
+export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
+    for (let highlight of spyUI.getSpyDecos()) {
+        if (highlight[0] == file) {
+            if (highlight[1].contains(pos)) {
+                return new Promise<vscode.Hover>(resolve => {
+                    resolve(spyCC.getComplexity(highlight, cancel));
+                });
+            }
+        }
+    };
+    return null;
 }
 
 function runAll(ctx: vscode.ExtensionContext) {

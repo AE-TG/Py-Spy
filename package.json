@@ -3,7 +3,7 @@
   "displayName": "Spy",
   "description": "Automated tool for analysing and testing Python code snippets in real time.",
   "icon": "assets/play.png",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -15,6 +15,16 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "PySpy",
+      "properties": {
+        "spy.RadonInstallLocation": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Where the Radon tool can be found for additional analysis."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

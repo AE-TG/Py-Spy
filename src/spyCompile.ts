@@ -38,9 +38,9 @@ export async function functionAnalysis(ctx: vscode.ExtensionContext) {
             args: ["-f", pycFile]
         };
         await PythonShell.run("src/spyMarshal.py", options).then(messages => {
-            console.log("spyMarshal found python function with data:");
+            //console.log("spyMarshal found python function with data:");
             messages.forEach(msg => {
-                console.log(msg);
+                // console.log(msg);
                 fList.push(msg);
             });
         });

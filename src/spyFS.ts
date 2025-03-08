@@ -45,3 +45,13 @@ function trimFunctionName(line: string) {
     let rv: string = line.split("def ")[1].split("(")[0];
     return rv;
 }
+
+// Convert a pathlike string to a sufficiently representative, sufficiently unique string name.
+// Used by spyCC for naming Radon cache files.
+export function cleanPathChars(path: string) : string {
+    path = path.replaceAll('/',"");
+    path = path.replaceAll('\\',"");
+    path = path.replaceAll(".","-")
+    path = path.replaceAll(":","_");
+    return path;
+}
