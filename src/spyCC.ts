@@ -20,9 +20,8 @@ export function generateRadonCache(files: Set<string> | string[]) {
         files.forEach(file => {
             console.log("PySpy: spyCC generating radon cache for " + file);
             const outputName = "radon" + spyFS.cleanPathChars(file);
-            
-            // Radon's -O option also writes control and escape sequences so avoid that for now.
-            term.sendText('./radon cc -s ' + file + " > " + outputName);
+
+            term.sendText('./radon cc -s ' + file + " -O " + outputName);
         });
     }
 }
@@ -37,7 +36,7 @@ export async function getComplexity(highlight: spyUI.spyDeco, cancel: vscode.Can
             generateRadonCache([highlight[0].fileName]);
         }
     
-        const cacheResult = loadRadonCacheFile(outputPath, highlight[1]);
+        const cacheResult = loadRadonCacheFile(outputPath, highlight[2] + 1); // the highlight is for the @spy decorator, increment by 1 to get the function
         return new vscode.Hover(cacheResult, highlight[1]);
     }
     else {
@@ -46,18 +45,45 @@ export async function getComplexity(highlight: spyUI.spyDeco, cancel: vscode.Can
     }   
 }
 
-function loadRadonCacheFile(cacheFilePath: string, range: vscode.Range) : string {
+function loadRadonCacheFile(cacheFilePath: string, lineNumber: number) : string {
     const rawRadon: string = fs.readFileSync(cacheFilePath).toString();
     if (rawRadon.length <= 0) {
         return "**PySpy** failed to load Radon results for this function.";
     }
 
-    // strip first line
-    const r1 = rawRadon.substring(rawRadon.indexOf('\n'));
-    // strip spaces
-    const r2 = r1.replaceAll(' ',"");
-    // TODO only report this function using range manipulation
-    // TODO markup and prettify
+    let lines = rawRadon.split('\n');
+    lines = radonOutputFilter(lines);
+    lines = lines.filter((fn) => radonCCFilter(fn, lineNumber));
+    if (lines.length > 1) {
+        console.log("PySpy: Radon cache file had multiple entries for the same function!");
+        lines.forEach(line => {
+            console.log("        > " + line);
+        });
+        console.log("Using first...");
+    }
 
-    return r2;
+    // Extract CC number from line
+    const complexityScore = lines[0].split(" ").at(-2)?.slice(1, -1);
+    return "Cyclomatic Complexity: " + complexityScore;
+}
+
+function radonOutputFilter(rawLines: string[]) : string[] {
+    // Radon's -O option also writes control and escape sequences; remove them.
+    let rv: string[] = [];
+    const rawRadon = new RegExp('(\\u001b\[[0-9]+m)', 'gm');
+    const extraWhitespace = new RegExp('\\s{2,}', 'gm');
+    rawLines.forEach(line => {
+        const filt0 = line.replace(rawRadon, " ");
+        const filt1 = filt0.replace(extraWhitespace, " ");
+        rv.push(filt1);
+    });
+    return rv;
+}
+
+function radonCCFilter(ccLine: string, lineNumber: number) : boolean {
+    if (ccLine.includes(" F " + lineNumber + ":") || ccLine.includes(" M " + lineNumber + ":")) {
+        // radon filter matches the expected line number
+        return true;
+    }
+    return false;
 }

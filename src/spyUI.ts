@@ -34,7 +34,7 @@ export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 
     updateTimer = setTimeout(applyDecorations, delay);
 }
 
-export type spyDeco = [file: vscode.TextDocument, range: vscode.Range];
+export type spyDeco = [file: vscode.TextDocument, range: vscode.Range, line: number];
 let spyDecoList: spyDeco[] = []
 export function getSpyDecos() {
     return spyDecoList;
@@ -54,7 +54,7 @@ function applyDecorations() {
                     if (doc.lineAt(lineIndex - 1).text.startsWith("@spy")) {
                         console.log("spyUI found decorator on line " + lineIndex);
                         spyDecoratorRanges.push(doc.lineAt(lineIndex - 1).range);
-                        spyDecoList.push([doc, doc.lineAt(lineIndex - 1).range]);
+                        spyDecoList.push([doc, doc.lineAt(lineIndex - 1).range, lineIndex]);
                     }
                 }
             }
