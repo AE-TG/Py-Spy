@@ -21,7 +21,8 @@ export function generateRadonCache(files: Set<string> | string[]) {
             console.log("PySpy: spyCC generating radon cache for " + file);
             const outputName = "radon" + spyFS.cleanPathChars(file);
 
-            term.sendText('./radon cc -s ' + file + " -O " + outputName);
+            term.sendText('./radon cc -s ' + file + " -O " + outputName + "cc");
+            term.sendText('./radon hal -f ' + file + " -O " + outputName + "hal");
         });
     }
 }
@@ -32,11 +33,11 @@ export async function getComplexity(highlight: spyUI.spyDeco, cancel: vscode.Can
         const outputPath = radonWhere + "/" + outputName;
 
         // If there is no Radon data for this file, make it.
-        if (!fs.existsSync(outputPath)) {
+        if (!fs.existsSync(outputPath+"cc") || !fs.existsSync(outputPath+"hal")) {
             generateRadonCache([highlight[0].fileName]);
         }
     
-        const cacheResult = loadRadonCacheFile(outputPath, highlight[2] + 1); // the highlight is for the @spy decorator, increment by 1 to get the function
+        const cacheResult = loadRadonResults(outputPath, highlight[2] + 1); // the highlight is for the @spy decorator, increment by 1 to get the function
         return new vscode.Hover(cacheResult, highlight[1]);
     }
     else {
@@ -45,26 +46,54 @@ export async function getComplexity(highlight: spyUI.spyDeco, cancel: vscode.Can
     }   
 }
 
-function loadRadonCacheFile(cacheFilePath: string, lineNumber: number) : string {
-    const rawRadon: string = fs.readFileSync(cacheFilePath).toString();
+function loadRadonResults(cacheFilePath: string, lineNumber: number) : string {
+    const [ccScore, halDScore] = loadRadonCacheFiles(cacheFilePath, lineNumber);
+    return ("*Complexity Score:* " + ccScore + " | *Halstead Difficulty:* " + halDScore);
+}
+
+function loadRadonCacheFiles(cacheFilePath: string, lineNumber: number) : [string, string] {
+    const rawRadonCC = fileAsString(cacheFilePath+"cc");
+    const rawRadonHal = fileAsString(cacheFilePath+"hal");
+
+    let cc: string = "N/A";
+    let halD: string = "N/A";
+   
+    if (rawRadonCC) {
+        let lines = rawRadonCC.split('\n');
+        lines = radonOutputFilter(lines);
+        lines = lines.filter((fn) => radonCCLineFilter(fn, lineNumber));
+        if (lines.length > 1) {
+            // TODO overloading?
+            console.log("PySpy: Radon cache file had multiple entries for the same function!");
+            lines.forEach(line => {
+                console.log("        > " + line);
+            });
+            console.log("Using first...");
+        }
+        cc = lines[0].replace('\r',"");
+    }
+    if (rawRadonHal && rawRadonCC) {
+        // extracting the Halstead Difficulty from Radon output requires knowing the function name,
+        // which can be extracted from the CC output.
+        let lines: any = rawRadonHal.split('\n');
+        lines = radonOutputFilter(lines).join('\n');
+        lines = radonHalFunctionFilter(lines, cc.split(" ").at(3));
+        // `lines` here is the entire Halstead metric block.
+        halD = lines[9].replace('\r',""); // just the difficulty score
+    }
+
+    // Extract score number from lines
+    const ccScore = cc?.split(" ").at(-2)?.slice(1, -1) ?? "N/A";
+    const halDScore = halD?.split(" ").at(-1) ?? "N/A"
+    return [ccScore, halDScore];
+}
+
+function fileAsString(fileName: string) : string|undefined {
+    const rawRadon: string = fs.readFileSync(fileName).toString();
     if (rawRadon.length <= 0) {
-        return "**PySpy** failed to load Radon results for this function.";
+        return;
     }
-
-    let lines = rawRadon.split('\n');
-    lines = radonOutputFilter(lines);
-    lines = lines.filter((fn) => radonCCFilter(fn, lineNumber));
-    if (lines.length > 1) {
-        console.log("PySpy: Radon cache file had multiple entries for the same function!");
-        lines.forEach(line => {
-            console.log("        > " + line);
-        });
-        console.log("Using first...");
-    }
-
-    // Extract CC number from line
-    const complexityScore = lines[0].split(" ").at(-2)?.slice(1, -1);
-    return "Cyclomatic Complexity: " + complexityScore;
+    return rawRadon;
 }
 
 function radonOutputFilter(rawLines: string[]) : string[] {
@@ -80,10 +109,32 @@ function radonOutputFilter(rawLines: string[]) : string[] {
     return rv;
 }
 
-function radonCCFilter(ccLine: string, lineNumber: number) : boolean {
+function radonCCLineFilter(ccLine: string, lineNumber: number) : boolean {
     if (ccLine.includes(" F " + lineNumber + ":") || ccLine.includes(" M " + lineNumber + ":")) {
         // radon filter matches the expected line number
         return true;
     }
     return false;
+}
+
+function radonHalFunctionFilter(lines: string, fName: string|undefined) : string[] {
+    if (fName) {
+        const regex = new RegExp('('+fName+':\\s+h1:.*\\s+h2:.*\\s+N1:.*\\s+N2:.*\\s+vocabulary:.*\\s+length:.*\\s+calculated_length:.*\\s+volume:.*\\s+difficulty:.*\\s+effort:.*\\s+time:.*\\s+bugs:.*)', '');
+        const matches = regex.exec(lines);
+        if (matches !== null) {
+            if (matches.length > 1) {
+                // TODO overloading?
+                // TODO this incorrectly duplicates a match...
+                console.log("PySpy: Radon cache file had multiple entries for the same function!");
+                matches.forEach(m => {
+                    console.log("        > " + m);
+                });
+                console.log("Using first...");
+            }
+            for (let m of matches) {
+                return m.split('\n');
+            }
+        }
+    }
+    return [];
 }
