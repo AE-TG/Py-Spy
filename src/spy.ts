@@ -28,6 +28,9 @@ export function setupUI(ctx: vscode.ExtensionContext) {
 export function scanUI(ctx: vscode.ExtensionContext) {
     spyUI.updateDecorations(ctx, 1000);
 }
+export function scanCC(ctx: vscode.ExtensionContext) {
+    spyCC.generateRadonCache(spyFS.getSpyFiles());
+}
 export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
     for (let highlight of spyUI.getSpyDecos()) {
         if (highlight[0] == file) {

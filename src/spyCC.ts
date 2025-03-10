@@ -3,42 +3,42 @@ import * as spyFS from './spyFS';
 import * as spyUI from './spyUI';
 import fs from 'fs';
 
-export async function getComplexity(highlight: spyUI.spyDeco, cancel: vscode.CancellationToken) {
+let radonWhere: string | boolean = false;
+export function generateRadonCache(files: Set<string> | string[]) {
     let cfg = vscode.workspace.getConfiguration("spy");
-    let radon = cfg.get("RadonInstallLocation", false);
+    radonWhere = cfg.get("RadonInstallLocation", false);
 
-    if (radon) {
+    if (radonWhere) {
         // Radon found, assume the user wants this feature.
-        const outputName = "radon" + spyFS.cleanPathChars(highlight[0].fileName);
-        const outputPath = radon + "/" + outputName;
-
-        // If there is recent (<10sec old) Radon data for this file, use it.
-        if (fs.existsSync(outputPath)) {
-            if (Date.now() - fs.statSync(outputPath).mtimeMs < 10000) {
-                // TODO: change this to be a vscode ws ondocumentsaved event to delete and remake the cache file.
-                // Otherwise there's annoying behaviour where you have you mouse something twice to get feedback
-                // whenever the timer rolls because VSCode destroys the hover request very quickly.
-                const cacheResult = loadRadonCacheFile(outputPath, highlight[1]);
-                return new vscode.Hover(cacheResult, highlight[1]);
-            }
-            else {
-                // cache outdated, delete it
-                fs.rmSync(outputPath, { } );
-            }
-        }
-
-        console.log("PySpy: spyCC generating radon cache for " + highlight[0].fileName);
-        // No (recent) Radon data - run Radon to generate it
         const opt = {} as vscode.TerminalOptions;
         opt.location = vscode.TerminalLocation.Panel;
         opt.hideFromUser = true;
         opt.isTransient = true;
         const term = vscode.window.createTerminal(opt);
-        term.sendText('cd ' + radon, true);
-        term.sendText('./radon cc -s ' + highlight[0].fileName + " > " + outputName);
-        
-        const radonOutput = loadRadonCacheFile(outputPath, highlight[1]);
-        return new vscode.Hover(radonOutput, highlight[1]);
+        term.sendText('cd ' + radonWhere, true);
+
+        files.forEach(file => {
+            console.log("PySpy: spyCC generating radon cache for " + file);
+            const outputName = "radon" + spyFS.cleanPathChars(file);
+            
+            // Radon's -O option also writes control and escape sequences so avoid that for now.
+            term.sendText('./radon cc -s ' + file + " > " + outputName);
+        });
+    }
+}
+
+export async function getComplexity(highlight: spyUI.spyDeco, cancel: vscode.CancellationToken) {
+    if (radonWhere) {
+        const outputName = "radon" + spyFS.cleanPathChars(highlight[0].fileName);
+        const outputPath = radonWhere + "/" + outputName;
+
+        // If there is no Radon data for this file, make it.
+        if (!fs.existsSync(outputPath)) {
+            generateRadonCache([highlight[0].fileName]);
+        }
+    
+        const cacheResult = loadRadonCacheFile(outputPath, highlight[1]);
+        return new vscode.Hover(cacheResult, highlight[1]);
     }
     else {
         cancel.isCancellationRequested = true;
