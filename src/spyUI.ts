@@ -7,7 +7,7 @@ let greenFaintHighlight: vscode.TextEditorDecorationType = vscode.window.createT
 let redFaintHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
 export function createDecorations(ctx: vscode.ExtensionContext) {
     const pinkRenderOptions = {} as vscode.DecorationRenderOptions;
-    pinkRenderOptions.backgroundColor = "#FF22AA77";
+    pinkRenderOptions.backgroundColor = "#FF339977";
     pinkRenderOptions.gutterIconPath = ctx.asAbsolutePath("assets/play_16.png");
     pinkRenderOptions.gutterIconSize = "auto";
     pinkRenderOptions.isWholeLine = true;

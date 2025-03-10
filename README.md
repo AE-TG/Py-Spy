@@ -50,7 +50,7 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 ## Extension Settings
 
 * `spy.RadonInstallLocation`: Path to the Radon executable. Needs to be installed separately (for now) with `pip install radon`. A successful install should list the path; note that Windows expects escaped backslashes.
-  * With the extension installed (including in debug sessions built from source), you can set this by going to `> File > Preferences > Settings > Extensions > PySpy`.
+  * With the extension installed (including in debug sessions built from source), you can set this by going to `> File > Preferences > Settings > User > Extensions > PySpy` and changing it in `settings.json`.
   * This setting is persisted with your VSCode profile.
 
 ## Building and Running From Source
