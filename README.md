@@ -56,6 +56,7 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 ## Building and Running From Source
 1. Open a new Visual Studio Code workspace in the repository directory.
 2. Press `F5` to start a new debug session with PySpy running!
+3. (Optional) Check the **Extension Settings** section above for details on how to install and connect **Radon** integration.
 
 **N.B.** If you are trying to modify or extend PySpy, there's an isssue in VSCode's typescript import resolution where it will get stuck complaining in the importing file that the imported file could not be found, even if it does exist and imported functions are recognized and can be called. Restarting VSCode should resolve this.
 
