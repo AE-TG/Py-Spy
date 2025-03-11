@@ -13,13 +13,13 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		if (editor) {
 			spy.scanUI(context);
-			spy.scanCC(context);
+			spy.scanCC();
 		}
 	}, null, context.subscriptions);
 	vscode.workspace.onDidOpenTextDocument(event => {
 		if (event.fileName) {
 			spy.scanUI(context);
-			spy.scanCC(context);
+			spy.scanCC(event.fileName);
 		}
 	}, null, context.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(event => {
@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}, null, context.subscriptions);
 	vscode.workspace.onDidSaveTextDocument(event => {
 		if (event.fileName) {
-			spy.scanCC(context);
+			spy.scanCC(event.fileName);
 		}
 	}, null, context.subscriptions);
 	
