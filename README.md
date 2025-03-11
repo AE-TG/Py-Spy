@@ -37,6 +37,7 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 - `src/spyMarshal.py`: Python script for the marshaling of python bytecode, used to inspect functions as part of the testing features.
 #### 3. UI
 - Opt-in: only run on files and functions where the user has opted in with the `@spy` decorator. If you want the features, it's right there.
+  - **NOTICE:** You currently need to provide your own definition. Recommend `def spy(fn): pass` at the top of files in which you want to use it until the extension automatically inserts this in TBD future update.
 - Whenever the user opens an editor while the extension is active or completes some typing task, these decorators for open editors are updated. This gives a good balance between responsiveness and performance - no updates are being performed while the user is actively coding in the workspace, but as soon as the user stops the updates will trigger for immediate feedback.
 - Featuring:
   - Pink line highlight when `@spy` python decorators are found, indicating that **spy** will run on the decorated function. Hovering these decorations will result in a tooltip popup with Radon code statistics if enabled.
