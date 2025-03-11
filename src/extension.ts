@@ -13,6 +13,13 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		if (editor) {
 			spy.scanUI(context);
+			spy.scanCC();
+		}
+	}, null, context.subscriptions);
+	vscode.workspace.onDidOpenTextDocument(event => {
+		if (event.fileName) {
+			spy.scanUI(context);
+			spy.scanCC(event.fileName);
 		}
 	}, null, context.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(event => {
@@ -20,6 +27,12 @@ export function activate(context: vscode.ExtensionContext) {
 			spy.scanUI(context);
 		}
 	}, null, context.subscriptions);
+	vscode.workspace.onDidSaveTextDocument(event => {
+		if (event.fileName) {
+			spy.scanCC(event.fileName);
+		}
+	}, null, context.subscriptions);
+	
 	vscode.languages.registerHoverProvider('python', {
 		provideHover(document, position, token) {
 			return spy.provideHover(document, position, token);

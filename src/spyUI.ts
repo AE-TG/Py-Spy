@@ -7,7 +7,7 @@ let greenFaintHighlight: vscode.TextEditorDecorationType = vscode.window.createT
 let redFaintHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
 export function createDecorations(ctx: vscode.ExtensionContext) {
     const pinkRenderOptions = {} as vscode.DecorationRenderOptions;
-    pinkRenderOptions.backgroundColor = "#FF22AA77";
+    pinkRenderOptions.backgroundColor = "#FF339977";
     pinkRenderOptions.gutterIconPath = ctx.asAbsolutePath("assets/play_16.png");
     pinkRenderOptions.gutterIconSize = "auto";
     pinkRenderOptions.isWholeLine = true;
@@ -34,7 +34,7 @@ export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 
     updateTimer = setTimeout(applyDecorations, delay);
 }
 
-export type spyDeco = [file: vscode.TextDocument, range: vscode.Range];
+export type spyDeco = [file: vscode.TextDocument, range: vscode.Range, line: number];
 let spyDecoList: spyDeco[] = []
 export function getSpyDecos() {
     return spyDecoList;
@@ -54,7 +54,7 @@ function applyDecorations() {
                     if (doc.lineAt(lineIndex - 1).text.startsWith("@spy")) {
                         console.log("spyUI found decorator on line " + lineIndex);
                         spyDecoratorRanges.push(doc.lineAt(lineIndex - 1).range);
-                        spyDecoList.push([doc, doc.lineAt(lineIndex - 1).range]);
+                        spyDecoList.push([doc, doc.lineAt(lineIndex - 1).range, lineIndex]);
                     }
                 }
             }
