@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as spyCompile from './spyCompile';
-import * as spyCC from './spyCC';
+import * as spyStatistics from './spyStatistics';
 import * as spyFS from './spyFS';
 import * as spyInputs from './spyInputs';
 import * as spyUI from './spyUI';
@@ -30,10 +30,10 @@ export function scanUI(ctx: vscode.ExtensionContext) {
 }
 export function scanCC(fileName: string = "") {
     if (fileName) {
-        spyCC.generateRadonCache([fileName]);
+        spyStatistics.generateRadonCache([fileName]);
     }
     else {
-        spyCC.generateRadonCache(spyFS.getSpyFiles());
+        spyStatistics.generateRadonCache(spyFS.getSpyFiles());
     }
 }
 export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
@@ -41,7 +41,7 @@ export function provideHover(file: vscode.TextDocument, pos: vscode.Position, ca
         if (highlight[0] == file) {
             if (highlight[1].contains(pos)) {
                 return new Promise<vscode.Hover>(resolve => {
-                    resolve(spyCC.getComplexity(highlight, cancel));
+                    resolve(spyStatistics.getComplexity(highlight, cancel));
                 });
             }
         }
