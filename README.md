@@ -46,11 +46,17 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 #### 4. Analysis
 - TBD
 #### 5. Testing
+- You do not need to write tests! The biggest advantage that **spy** provides is that it will automatically (attempt to) test your code for failure points.
+- **spy** uses a slightly different test mechanism than traditional VSCode test tools and extensions because **spy** automatically performs interface and coverage testing. It does **NOT** make any guarantee that your code is correct - it does not check output correctness, only output validity.
 - TBD
+- **spy** testing runs alongside other VSCode test tools like the default **pytest** and **unittest**. Those tools still work exactly as they are designed to and **spy** does not interfere with them in any way except for potential code coverage highlighting conflicts. You can disable other test extension coverage highlighting by toggling the `Show Inline Coverage` button (default shortcut: `Ctrl+; Ctrl+Shift+I`) if you prefer **spy**'s automatic testing and highlighting, or you can disable **spy**'s testing and highlighting in the extension settings (details below).
 
 ## Extension Settings
 
 * `spy.RadonInstallLocation`: Path to the Radon executable. Needs to be installed separately (for now) with `pip install radon`. A successful install should list the path; note that Windows expects escaped backslashes.
+  * With the extension installed (including in debug sessions built from source), you can set this by going to `> File > Preferences > Settings > User > Extensions > PySpy` and changing it in `settings.json`.
+  * This setting is persisted with your VSCode profile.
+* `spy.TestingEnabled`: True/False toggle for built-in immediate unit testing. While enabled, **spy** will automatically attempt to test functions for signature breaks and code coverage, displaying coverage highlights in the traditional red (uncovered) and green (covered) and warning the user about possible errors.
   * With the extension installed (including in debug sessions built from source), you can set this by going to `> File > Preferences > Settings > User > Extensions > PySpy` and changing it in `settings.json`.
   * This setting is persisted with your VSCode profile.
 
