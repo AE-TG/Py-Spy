@@ -3,20 +3,24 @@ import * as spyFS from './spyFS';
 import { PythonShell } from 'python-shell'
 
 
-export function build() {
-    vscode.window.showInformationMessage('PySpy: compiling in background.');
+export function build(file?: vscode.TextDocument): void {
     const opt = {} as vscode.TerminalOptions;
     opt.location = vscode.TerminalLocation.Panel;
     opt.hideFromUser = true;
     opt.isTransient = true;
     const term = vscode.window.createTerminal(opt);
-    const spySet = spyFS.getSpyFiles();
-    spySet.forEach(file => {
-        console.log("PySpy: attempting to compile " + file);
-        term.sendText('python -m py_compile ' + file, true);
-    });
-
-    //TODO AST here?
+    if (file)
+    {
+        console.log("PySpy: attempting to compile " + file.fileName);
+        term.sendText('python -m py_compile ' + file.fileName, true);
+    }
+    else {
+        const spySet = spyFS.getSpyFiles();
+        spySet.forEach(file => {
+            console.log("PySpy: attempting to compile " + file);
+            term.sendText('python -m py_compile ' + file, true);
+        });
+    }
 }
 
 export async function functionAnalysis(ctx: vscode.ExtensionContext) {

@@ -37,7 +37,10 @@ export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 
 // Let other spy functionality discover where to focus
 export type spyDeco = [file: vscode.TextDocument, range: vscode.Range, line: number];
 let spyDecoList: spyDeco[] = []
-export function getSpyDecos() {
+export function getSpyDecos(file?: vscode.TextDocument) {
+    if (file) {
+        return spyDecoList.filter((deco) => (deco[0] == file));
+    }
     return spyDecoList;
 }
 
