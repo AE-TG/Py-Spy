@@ -3,6 +3,7 @@ import * as spyUI from './spyUI';
 import * as vscode from 'vscode';
 import fs from 'fs';
 
+
 let radonWhere: string | boolean = false;
 export function generateRadonCache(files: Set<string> | string[]) {
     let cfg = vscode.workspace.getConfiguration("spy");

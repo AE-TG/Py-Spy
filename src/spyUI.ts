@@ -49,10 +49,15 @@ let spyCoveragePassList: spyDeco[] = []
 let spyCoverageFailList: spyDeco[] = []
 export function resetCoverageDecoLists(file: vscode.TextDocument | undefined) {
     if (file) {
-        // TODO - remove decos that match the file
+        // remove elements that match the file
+        spyCoveragePassList = spyCoveragePassList.filter((element) => (element[0] != file));
+        spyCoverageFailList = spyCoverageFailList.filter((element) => (element[0] != file));
     }
     else {
-        // TODO - remove all decos (is this ever useful?)
+        // remove all decos
+        // TODO - is this ever useful?
+        spyCoveragePassList = [];
+        spyCoverageFailList = [];
     }
 }
 export function addCoverageDeco(newDeco: spyDeco, pass: boolean) {

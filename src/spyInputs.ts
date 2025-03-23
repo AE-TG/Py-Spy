@@ -1,4 +1,14 @@
+import * as spyMarshal from './spyMarshal';
+
+
 export function getInputTypes(fSignature: string) {
+    // TODO this needs to rely on python marshalling + inspect to get the arg types
+    // and return an array of example output types for generateInputs().
+
+    // for python object methods (ie, `self` as an argument), we must fail a POD check
+    // because we can't reasonably construct an object (even if the object is ultimately POD)
+    // that represents every combination of data values.
+
     const outputTypes: any[] = [true, 3.33, "blabla", false, -Infinity, ""];
     return outputTypes;
 }
@@ -38,6 +48,10 @@ export function generateInputs(inputTypes: any[]) {
             }
             case String: {
                 outputTypes.push(["", "'", "foo", "\n", null]);
+                break;
+            }
+            case Array: {
+                // TODO
                 break;
             }
         }

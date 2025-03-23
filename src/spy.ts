@@ -19,13 +19,16 @@ export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument)
 
         spyUI.updateDecorations(ctx, 0);
         spyStatistics.generateRadonCache([doc.fileName]);
-        spyCompile.build(doc);
+        spyCompile.build(doc.fileName);
         spyTesting.generateTestResults(spyUI.getSpyDecos(doc));
         spyUI.updateDecorations(ctx); // update again to collect the test results
     }
     else {
         spyStatistics.generateRadonCache(spyFS.getSpyFiles());
-        spyCompile.build();
+        const spySet = spyFS.getSpyFiles();
+        spySet.forEach(file => {
+            spyCompile.build(file);
+        });
     }
 }
 export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {

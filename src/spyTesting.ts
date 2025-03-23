@@ -3,6 +3,7 @@ import * as spyMarshal from './spyMarshal';
 import * as spyUI from './spyUI';
 import * as vscode from 'vscode';
 
+
 // !! IMPORTANT !!
 // It is on the calling function to provide only a set of inputs for which spyCompile has already built pycache files!
 // Otherwise testing will fail because we don't make bytecode for marshaling to run on here in order to save effort
@@ -44,6 +45,7 @@ function unitTest(fn: spyUI.spyDeco) {
     */
     
     // TODO update coverage outputs
+    spyUI.resetCoverageDecoLists(fn[0]);
     /*
     spyUI.addCoverageDeco(line, true); // pass
     spyUI.addCoverageDeco(line, fail); // pass
