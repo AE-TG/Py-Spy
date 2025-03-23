@@ -1,26 +1,10 @@
-import * as vscode from 'vscode';
 import * as spyCompile from './spyCompile';
 import * as spyFS from './spyFS';
-import * as spyInputs from './spyInputs';
 import * as spyStatistics from './spyStatistics';
 import * as spyTesting from './spyTesting';
 import * as spyUI from './spyUI';
+import * as vscode from 'vscode';
 
-
-let intervalID: NodeJS.Timeout;
-export function run(ctx: vscode.ExtensionContext, enable: boolean, intervalSeconds: number = 15) {
-    if (intervalID) {
-        console.log("stopping spy");
-        clearInterval(intervalID);
-    }
-    if (enable) {
-        console.log("starting spy");
-        runAll(ctx);
-        intervalID = setInterval(() => {
-            runAll(ctx)
-        }, intervalSeconds * 1000);
-    }
-}
 
 export function setupUI(ctx: vscode.ExtensionContext) {
     spyUI.createDecorations(ctx);
@@ -36,9 +20,6 @@ export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument)
         spyUI.updateDecorations(ctx, 0);
         spyStatistics.generateRadonCache([doc.fileName]);
         spyCompile.build(doc);
-        // TODO
-        spyCompile.functionAnalysis(ctx); // For decorated functions, test interesting input values to check for edge cases or unintended values/throws.
-        // end TODO
         spyTesting.generateTestResults(spyUI.getSpyDecos(doc));
         spyUI.updateDecorations(ctx); // update again to collect the test results
     }
@@ -57,18 +38,3 @@ export function provideHover(file: vscode.TextDocument, pos: vscode.Position, ca
     };
     return null;
 }
-
-function runAll(ctx: vscode.ExtensionContext) {
-    //TODO check timing loop and adjust or run on user trigger
-
-    /*
-    decoratedFns.forEach(fn => {
-        let inputTypes = spyInputs.getInputTypes(fn);
-        if (spyInputs.isPODInput(inputTypes)) {
-            spyInputs.testInputs(fn, spyInputs.generateInputs(inputTypes));
-        }
-    });
-    */
-
-}
-

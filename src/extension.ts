@@ -1,5 +1,5 @@
+import * as spy from './spy'; // spy only exports top-level functionality for events
 import * as vscode from 'vscode'; // VS Code extension API
-import * as spy from './spy'; // spy only exports top-level functionality
 
 // This method is called when your extension is activated (the first time any registered command is executed)
 export function activate(context: vscode.ExtensionContext) {
@@ -39,5 +39,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	spy.run(context, true);
+}
+
+export async function deactivate(context: vscode.ExtensionContext): Promise<void> {
+	// TODO
+	
+	// is `context` even accessible here?
+	
+	//spy.removeUI();
+	//spy.deleteCache(context)
 }

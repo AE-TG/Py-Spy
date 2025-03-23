@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
 import * as spyFS from './spyFS';
 import * as spyUI from './spyUI';
+import * as vscode from 'vscode';
 import fs from 'fs';
 
 let radonWhere: string | boolean = false;
