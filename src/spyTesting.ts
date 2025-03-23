@@ -1,4 +1,5 @@
-import * as spyCompile from './spyCompile';
+import * as spyInputs from './spyInputs';
+import * as spyMarshal from './spyMarshal';
 import * as spyUI from './spyUI';
 import * as vscode from 'vscode';
 
@@ -17,14 +18,21 @@ export function generateTestResults(decoFunctions: spyUI.spyDeco[]) {
 }
 
 function unitTest(fn: spyUI.spyDeco) {
-    let fName: string = fn[0].lineAt(fn[2]).text;
-    console.log("testing " + fName + " in " + fn[0].fileName);
-    
-    // TODO compile file
+    let fSignature: string = fn[0].lineAt(fn[2]).text;
+    console.log("testing " + fSignature + " in " + fn[0].fileName);
     
     // TODO generate inputs
+    // spyMarshal get inputs
     
+    let inputTypes: any[] = spyInputs.getInputTypes(fSignature);
+    // inputTypes[0] is `undefined` for void functions.
+    if (inputTypes.length == 0)
+    {
+        vscode.window.showWarningMessage("PySpy: " + fSignature + " has no type hints, unable to construct tests!");
+    }
+
     // TODO run test
+    // spyMarshal
     
     // TODO catch/report errors
     /*

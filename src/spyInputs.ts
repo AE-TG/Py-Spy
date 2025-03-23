@@ -1,4 +1,4 @@
-export function getInputTypes(fn: ((data: string) => void)) {
+export function getInputTypes(fSignature: string) {
     const outputTypes: any[] = [true, 3.33, "blabla", false, -Infinity, ""];
     return outputTypes;
 }
