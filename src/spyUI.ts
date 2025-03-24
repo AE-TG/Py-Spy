@@ -114,3 +114,11 @@ function applyDecorations() {
         }
     });
 }
+
+export function removeDecorations() {
+    vscode.window.visibleTextEditors.forEach(ed => {
+        ed.setDecorations(pinkHighlight, []);
+        ed.setDecorations(greenFaintHighlight, []);
+        ed.setDecorations(redFaintHighlight, []);
+    });
+}

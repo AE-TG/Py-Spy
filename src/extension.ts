@@ -42,10 +42,8 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export async function deactivate(context: vscode.ExtensionContext): Promise<void> {
-	// TODO
-	
-	// is `context` even accessible here?
-	
-	//spy.removeUI();
-	//spy.deleteCache(context)
+	// Is `context` even accessible here? VSCode API doesnt detail the deactivate arguments.
+
+	spy.removeUI();
+	spy.deleteCache()
 }
