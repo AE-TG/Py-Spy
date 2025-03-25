@@ -17,7 +17,6 @@ export function removeUI() {
     spyUI.removeDecorations();
 }
 
-
 export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument) {
     if (ctx && doc) {
         // A specific file was opened or saved.
@@ -37,13 +36,12 @@ export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument)
     }
 }
 export async function deleteCache() {
-    // TODO return timed promise
-    // This does work, just...not before VSCode shuts down and kills it.
-    const spySet = spyFS.getSpyFiles();
-    spySet.forEach(file => {
-        spyCompile.removeBuildFile(file);
-    });
-    spyStatistics.deleteRadonCache(spySet);
+    let spySet = spyFS.getSpyFiles();
+    spySet = spyFS.getSpyFiles();
+    for await (const file of spySet) {
+        await spyCompile.removeBuildFile(file);
+    }
+    await spyStatistics.deleteRadonCache(spySet);
 }
 
 export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {

@@ -12,18 +12,10 @@ export function build(file: string): void {
     term.sendText('python -m py_compile ' + file, true);
 }
 
-export function removeBuildFile(file: string): void {
-    const opt = {} as vscode.TerminalOptions;
-    opt.location = vscode.TerminalLocation.Panel;
-    opt.hideFromUser = true;
-    opt.isTransient = true;
-    const term = vscode.window.createTerminal(opt);
+export async function removeBuildFile(file: string) {
+    const [path, fileName] = spyFS.getFileFromPath(file);
+    const fullName = path + '/__pycache__/' + fileName.split(".py").at(0) + ".cpython-312.pyc";
 
-    let [path, fileName] = spyFS.getFileFromPath(file);
-    let fullName = path + '/__pycache__/' + fileName.split(".py").at(0) + ".cpython-312.pyc";
-
-    console.log("PySpy: attempting to delete " + fullName);
-    term.sendText('Remove-Item ' + fullName, true); // Powershell
-    term.sendText('rm ' + fullName, true); // *nix
-    term.sendText('del /q ' + spyFS.windowsify(fullName), true); // Windows
+    console.log("PySpy: attempting to delete " + vscode.Uri.file(fullName).fsPath);
+    vscode.workspace.fs.delete(vscode.Uri.file(fullName));
 }

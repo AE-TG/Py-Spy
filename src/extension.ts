@@ -1,15 +1,17 @@
 import * as spy from './spy'; // spy only exports top-level functionality for events
 import * as vscode from 'vscode'; // VS Code extension API
 
+
 // This method is called when your extension is activated (the first time any registered command is executed)
 export function activate(context: vscode.ExtensionContext) {
-	
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('extension "spy" is active');
-
 	// Set up UI addons
 	spy.setupUI(context);
+
+	// Run updates once
+	spy.scanUI(context);
+	spy.scanCC();
+
+	// Register events
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		if (editor) {
 			spy.scanUI(context);
@@ -38,12 +40,17 @@ export function activate(context: vscode.ExtensionContext) {
 			return spy.provideHover(document, position, token);
 		}
 	});
-
 }
 
-export async function deactivate(context: vscode.ExtensionContext): Promise<void> {
-	// Is `context` even accessible here? VSCode API doesnt detail the deactivate arguments.
-
+export async function deactivate(): Promise<any> {
 	spy.removeUI();
-	spy.deleteCache()
+	// https://github.com/microsoft/vscode/issues/144118
+	// VSCode made questionable design decisions to tie practically all processes to the renderer,
+	// which is killed almost immediately on exit. This means the majority of the API calls
+	// have no thread to service them despite the 5-second guarantee on `async deactivate()`.
+	// Awaiting cleanup on exit will fail because every file cleanup attempt's promise will be cancelled,
+	// causing the extension host process to complain after 1 second of an unhandled cancellation.
+	// This github issue is the *only* mention of this affecting the API.
+	// VSCode, YOU ARE DOING THE CANCELLATION. HANDLE IT YOURSELF.
+	return spy.deleteCache();
 }

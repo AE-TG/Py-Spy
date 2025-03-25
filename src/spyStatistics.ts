@@ -28,30 +28,20 @@ export function generateRadonCache(files: Set<string> | string[]) {
     }
 }
 
-export function deleteRadonCache(files: Set<string> | string[]) {
+export async function deleteRadonCache(files: Set<string> | string[]) {
     if (radonWhere) {
-        const opt = {} as vscode.TerminalOptions;
-        opt.location = vscode.TerminalLocation.Panel;
-        opt.hideFromUser = true;
-        opt.isTransient = true;
-        const term = vscode.window.createTerminal(opt);
-        term.sendText('cd ' + radonWhere, true);
-
-        files.forEach(file => {
+        for await (const file of files) {
             const outputName = "radon" + spyFS.cleanPathChars(file);
-            let [path, fileName] = spyFS.getFileFromPath(radonWhere + "/" + outputName);
-            let fullNameCC = path + "/" + fileName + "cc";
-            let fullNameHal = path + "/" + fileName + "hal";
+            const [path, fileName] = spyFS.getFileFromPath(radonWhere + "/" + outputName);
+            const fullNameCC = path + "/" + fileName + "cc";
+            const fullNameHal = path + "/" + fileName + "hal";
             
             console.log("PySpy: removing radon cache for " + fullNameCC);
-            term.sendText('Remove-Item ' + fullNameCC, true); // Powershell
-            term.sendText('rm ' + fullNameCC, true); // *nix
-            term.sendText('del /q ' + spyFS.windowsify(fullNameCC), true); // Windows
+            vscode.workspace.fs.delete(vscode.Uri.file(fullNameCC));
+
             console.log("PySpy: removing radon cache for " + fullNameHal);
-            term.sendText('Remove-Item ' + fullNameHal, true); // Powershell
-            term.sendText('rm ' + fullNameHal, true); // *nix
-            term.sendText('del /q ' + spyFS.windowsify(fullNameHal), true); // Windows
-        });
+            vscode.workspace.fs.delete(vscode.Uri.file(fullNameHal));
+        }
     }
 }
 
