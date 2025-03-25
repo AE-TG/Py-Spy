@@ -19,12 +19,29 @@ export function generateRadonCache(files: Set<string> | string[]) {
         term.sendText('cd ' + radonWhere, true);
 
         files.forEach(file => {
-            console.log("PySpy: spyCC generating radon cache for " + file);
+            console.log("PySpy: spyStatistics generating radon cache for " + file);
             const outputName = "radon" + spyFS.cleanPathChars(file);
 
             term.sendText('./radon cc -s ' + file + " -O " + outputName + "cc");
             term.sendText('./radon hal -f ' + file + " -O " + outputName + "hal");
         });
+    }
+}
+
+export async function deleteRadonCache(files: Set<string> | string[]) {
+    if (radonWhere) {
+        for await (const file of files) {
+            const outputName = "radon" + spyFS.cleanPathChars(file);
+            const [path, fileName] = spyFS.getFileFromPath(radonWhere + "/" + outputName);
+            const fullNameCC = path + "/" + fileName + "cc";
+            const fullNameHal = path + "/" + fileName + "hal";
+            
+            console.log("PySpy: removing radon cache for " + fullNameCC);
+            vscode.workspace.fs.delete(vscode.Uri.file(fullNameCC));
+
+            console.log("PySpy: removing radon cache for " + fullNameHal);
+            vscode.workspace.fs.delete(vscode.Uri.file(fullNameHal));
+        }
     }
 }
 

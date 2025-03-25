@@ -1,3 +1,4 @@
+import * as spyFS from './spyFS';
 import * as vscode from 'vscode';
 
 
@@ -9,4 +10,12 @@ export function build(file: string): void {
     const term = vscode.window.createTerminal(opt);
     console.log("PySpy: attempting to compile " + file);
     term.sendText('python -m py_compile ' + file, true);
+}
+
+export async function removeBuildFile(file: string) {
+    const [path, fileName] = spyFS.getFileFromPath(file);
+    const fullName = path + '/__pycache__/' + fileName.split(".py").at(0) + ".cpython-312.pyc";
+
+    console.log("PySpy: attempting to delete " + vscode.Uri.file(fullName).fsPath);
+    vscode.workspace.fs.delete(vscode.Uri.file(fullName));
 }
