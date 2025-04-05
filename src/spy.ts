@@ -1,4 +1,5 @@
 import * as spyCompile from './spyCompile';
+import * as spyMarshal from './spyMarshal';
 import * as spyFS from './spyFS';
 import * as spyStatistics from './spyStatistics';
 import * as spyTesting from './spyTesting';
@@ -6,6 +7,9 @@ import * as spyUI from './spyUI';
 import * as vscode from 'vscode';
 
 
+export async function setInfo(ctx: vscode.ExtensionContext) {
+    spyCompile.python.version = await spyMarshal.setPyVersion(ctx);
+}
 export function setupUI(ctx: vscode.ExtensionContext) {
     spyUI.createDecorations(ctx);
     spyUI.updateDecorations(ctx, 0);
@@ -24,7 +28,7 @@ export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument)
         spyUI.updateDecorations(ctx, 0);
         spyStatistics.generateRadonCache([doc.fileName]);
         spyCompile.build(doc.fileName);
-        spyTesting.generateTestResults(spyUI.getSpyDecos(doc));
+        spyTesting.generateTestResults(ctx, spyUI.getSpyDecos(doc));
         spyUI.updateDecorations(ctx); // update again to collect the test results
     }
     else {

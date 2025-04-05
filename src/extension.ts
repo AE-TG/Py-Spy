@@ -4,7 +4,8 @@ import * as vscode from 'vscode'; // VS Code extension API
 
 // This method is called when your extension is activated (the first time any registered command is executed)
 export function activate(context: vscode.ExtensionContext) {
-	// Set up UI addons
+	// Set up addons
+	spy.setInfo(context);
 	spy.setupUI(context);
 
 	// Run updates once
