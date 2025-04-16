@@ -27,6 +27,7 @@ export function createDecorations(ctx: vscode.ExtensionContext) {
 let updateTimer: NodeJS.Timeout | undefined = undefined;
 export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 1000) {
     // limit the UI updates to when the user is inactive for 1000ms or longer
+    resetCoverageDecoLists(); // it would be great to adjust these up and down as edits are made rather than delete entirely, but that is a whole barrel of context issues.
     if (updateTimer) {
         clearTimeout(updateTimer);
         updateTimer = undefined;
@@ -47,7 +48,7 @@ export function getSpyDecos(file?: vscode.TextDocument) {
 // Manage code coverage highlights
 let spyCoveragePassList: spyDeco[] = []
 let spyCoverageFailList: spyDeco[] = []
-export function resetCoverageDecoLists(file: vscode.TextDocument | undefined) {
+export function resetCoverageDecoLists(file?: vscode.TextDocument) {
     if (file) {
         // remove elements that match the file
         spyCoveragePassList = spyCoveragePassList.filter((element) => (element[0] != file));
@@ -55,7 +56,6 @@ export function resetCoverageDecoLists(file: vscode.TextDocument | undefined) {
     }
     else {
         // remove all decos
-        // TODO - is this ever useful?
         spyCoveragePassList = [];
         spyCoverageFailList = [];
     }
@@ -77,14 +77,15 @@ function applyDecorations() {
         if (doc.fileName.endsWith(".py")) {
             console.log("spyUI scanning " + doc.fileName);
 
-            // @spy decorator highlights
+            // #spy tag highlights
             let spyPinkRanges: vscode.Range[] = [];
             for(var lineIndex = 1; lineIndex < doc.lineCount; lineIndex++) {
                 if (doc.lineAt(lineIndex).text.startsWith("def ")) {
-                    if (doc.lineAt(lineIndex - 1).text.startsWith("@spy")) {
-                        console.log("spyUI found decorator on line " + lineIndex);
+                    if (doc.lineAt(lineIndex - 1).text.startsWith("#spy")) {
+                        console.log("spyUI found tag on line " + lineIndex);
                         spyPinkRanges.push(doc.lineAt(lineIndex - 1).range);
-                        spyDecoList.push([doc, doc.lineAt(lineIndex - 1).range, lineIndex]);
+                        const range = getTagFnRange(doc, lineIndex);
+                        spyDecoList.push([doc, range, lineIndex]);
                     }
                 }
             }
@@ -113,6 +114,23 @@ function applyDecorations() {
             ed.setDecorations(redFaintHighlight, spyRedFaintRanges);
         }
     });
+}
+
+function getTagFnRange(doc: vscode.TextDocument, line: number) {
+    // Take advantage of python indentation requirements.
+    const remaindertext = doc.getText(new vscode.Range(line, 0, doc.lineCount, 0)).split('\n');
+    const indent = getIndent(remaindertext[0])
+    for (let i = 1; i < remaindertext.length; i++) {
+        if (getIndent(remaindertext[i]) <= indent) {
+            return new vscode.Range(line + 2, 0, line + i, 0);
+        }
+    }
+    console.warn("No end range found, assuming EOF...");
+    return new vscode.Range(line + 2, 0, line + doc.lineCount, 0);
+}
+
+function getIndent(text: string) : number {
+    return text.indexOf(text.trimStart())
 }
 
 export function removeDecorations() {

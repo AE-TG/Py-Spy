@@ -8,7 +8,10 @@ import * as vscode from 'vscode';
 
 
 export async function setInfo(ctx: vscode.ExtensionContext) {
-    spyCompile.python.version = await spyMarshal.setPyVersion(ctx);
+    spyFS.python.version = spyMarshal.getPyVersion(ctx);
+    if ((parseInt(spyFS.python.version.at(0)!) < 3) && ((parseInt(spyFS.python.version)) < 39)) {
+        vscode.window.showErrorMessage('PySpy detected Python version ' + spyFS.python.version + " - some features are disabled on versions lower than 3.9!");
+    }
 }
 export function setupUI(ctx: vscode.ExtensionContext) {
     spyUI.createDecorations(ctx);
@@ -26,17 +29,20 @@ export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument)
         // A specific file was opened or saved.
 
         spyUI.updateDecorations(ctx, 0);
-        spyStatistics.generateRadonCache([doc.fileName]);
-        spyCompile.build(doc.fileName);
-        spyTesting.generateTestResults(ctx, spyUI.getSpyDecos(doc));
+        if (doc.fileName.endsWith(".py")) {
+            spyStatistics.generateRadonCache([doc.fileName]);
+            spyCompile.build(doc.fileName);
+            spyTesting.generateTestResults(spyUI.getSpyDecos(doc));
+        }
         spyUI.updateDecorations(ctx); // update again to collect the test results
     }
     else {
-        spyStatistics.generateRadonCache(spyFS.getSpyFiles());
         const spySet = spyFS.getSpyFiles();
+        spyStatistics.generateRadonCache(spySet);
         spySet.forEach(file => {
             spyCompile.build(file);
         });
+        spyTesting.generateTestResults([]); // TODO because the previous editors are closed, there is an issue with this only finding tags in the previous file because the UI has not updated.
     }
 }
 export async function deleteCache() {

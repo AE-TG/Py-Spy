@@ -1,36 +1,36 @@
 import * as spyFS from './spyFS';
+import * as spyUI from './spyUI';
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell'
 
-// TODO currently unused
-export async function functionAnalysis(ctx: vscode.ExtensionContext) {
-    let fList: string[] = []
-    const pyVersion = "312"; // TODO configurable version (read it from terminal?)
+let xPath: string;
+export function getPyVersion(ctx: vscode.ExtensionContext) {
+    xPath = ctx.extensionPath
+    const versionInfo = PythonShell.getVersionSync()
+    const versionParts = versionInfo.split(" ")[1].trim().split(".");
+    return versionParts[0] + versionParts[1];
+}
 
-    const spySet = spyFS.getSpyFiles();
-    spySet.forEach(async file => {
-        
-        // TODO is there a better way to do this?
-        // VSCode inherently operates in URI, pythonshell needs a path string, and the Uri module offers NO WAY to go between in a platform-agnostic manner
-        file = file.replaceAll("\\", "/");
-        const pathRoot = file.substring(0, file.lastIndexOf("/"));
-        const fileName = file.substring(file.lastIndexOf("/"), file.lastIndexOf(".py"));
-        const pycFile = pathRoot + "/__pycache__" + fileName + ".cpython-" + pyVersion + ".pyc";
-
-        let options = {
-            scriptPath: ctx.extensionPath,
-            args: ["-f", pycFile]
-        };
-        await PythonShell.run("src/spyMarshal.py", options).then(messages => {
-            //console.log("spyMarshal found python function with data:");
-            messages.forEach(msg => {
-                // console.log(msg);
-                fList.push(msg);
-            });
+export async function coverageTest(report: string, fn: spyUI.spyDeco) {
+    const pycFile = spyFS.getPycFile(fn[0].fileName);
+    let options = {
+        scriptPath: xPath,
+        args: ["-f", fn[0].fileName, "-p", pycFile, "-r", report, "-l", String(fn[2] + 1)]
+    };
+    await PythonShell.run("src/spyMarshal.py", options).then(messages => {
+        messages.forEach(msg => {
+            messageHandler(msg);
         });
     });
-
-    fList = fList.filter((fn) => spyFS.getSpyFns().map(decoType => decoType[1]).includes(fn));
-    console.log(fList);
-    return fList;
 }
+
+function messageHandler(msg: string) {
+    if (msg.startsWith("[E} ")) {
+        console.error(msg)
+    }
+    if (msg.startsWith("[W} ")) {
+        console.warn(msg)
+    } 
+}
+
+

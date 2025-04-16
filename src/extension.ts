@@ -28,6 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(event => {
 		if (event.document) {
 			spy.scanUI(context);
+			spy.scanCC(context, event.document);
 		}
 	}, null, context.subscriptions);
 	vscode.workspace.onDidSaveTextDocument(event => {
