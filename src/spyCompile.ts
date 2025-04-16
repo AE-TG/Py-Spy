@@ -12,11 +12,9 @@ export function build(file: string): void {
     term.sendText('python -m py_compile ' + file, true);
 }
 
-export const python: { version: string } = { version: "undefined" };
 export async function removeBuildFile(file: string) {
-    const [path, fileName] = spyFS.getFileFromPath(file);
-    const fullName = path + '/__pycache__/' + fileName.split(".py").at(0) + ".cpython-" + python.version + ".pyc";
+    const fileName = spyFS.getPycFile(file)
 
-    console.log("PySpy: attempting to delete " + fullName);
-    vscode.workspace.fs.delete(vscode.Uri.file(fullName));
+    console.log("PySpy: attempting to delete " + fileName);
+    vscode.workspace.fs.delete(vscode.Uri.file(fileName));
 }

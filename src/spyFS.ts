@@ -31,7 +31,7 @@ async function findSpyDecorators() {
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(file);
         for(var lineIndex = 1; lineIndex < doc.lineCount; lineIndex++) {
             if (doc.lineAt(lineIndex).text.startsWith("def ")) {
-                if (doc.lineAt(lineIndex - 1).text.startsWith("@spy")) {
+                if (doc.lineAt(lineIndex - 1).text.startsWith("#spy")) {
                     let fName: string = trimFunctionName(doc.lineAt(lineIndex).text);
                     decoFnList.push([doc.fileName, fName]);
                 }
@@ -68,4 +68,11 @@ export function getFileFromPath(path: string) : [string, string] {
 
 export function windowsify(path: string) : string {
     return '"' + path.replaceAll('/', '\\') + '"';
+}
+
+export const python: { version: string } = { version: "undefined" };
+export function getPycFile(fileName: string) : string {
+    const [path, file] = getFileFromPath(fileName);
+    const pycFile = path + '/__pycache__/' + file.split(".py").at(0) + ".cpython-" + python.version + ".pyc";
+    return pycFile;
 }
