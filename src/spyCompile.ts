@@ -15,6 +15,6 @@ export function build(file: string): void {
 export async function removeBuildFile(file: string) {
     const fileName = spyFS.getPycFile(file)
 
-    console.log("PySpy: attempting to delete " + fileName);
+    console.log("PySpy: removing python cache for " + fileName);
     vscode.workspace.fs.delete(vscode.Uri.file(fileName));
 }

@@ -51,6 +51,7 @@ export async function deleteCache() {
     for await (const file of spySet) {
         await spyCompile.removeBuildFile(file);
     }
+    await spyTesting.deleteTestCache();
     await spyStatistics.deleteRadonCache(spySet);
 }
 

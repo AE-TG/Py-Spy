@@ -28,6 +28,15 @@ export function generateTestResults(decoFunctions: spyUI.spyDeco[]) {
     }
 }
 
+export async function deleteTestCache() {
+    const name_glob = "**/*.py*.covjson"
+    const files = await vscode.workspace.findFiles(name_glob);
+    for await (const file of files) {
+        console.log("PySpy: removing coverage cache for " + file.toString());
+        vscode.workspace.fs.delete(file);
+    }
+}
+
 function runTests(decoFunctions: spyUI.spyDeco[]) {
     decoFunctions.forEach(fn => {
         unitTest(fn);
@@ -42,8 +51,8 @@ async function unitTest(fn: spyUI.spyDeco) {
         spyMarshal.coverageTest(fn[0].fileName, fn);
     }
     catch {
-        // TODO If you somehow made it here, you crashed the python interpreter itself.
-        console.error("err testing " + fn[0].getText(fn[1]));
+        // If you made it here, you somehow crashed the spyMarshal/PythonShell interpreter itself.
+        vscode.window.showErrorMessage('PySpy error testing ' + fn[0].lineAt(fn[2]+1).text + ' - Python crashed!');
     }
 }
 
