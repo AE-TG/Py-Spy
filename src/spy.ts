@@ -57,7 +57,7 @@ export async function deleteCache() {
 
 export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
     for (let highlight of spyUI.getSpyDecos(file)) {
-        if (highlight[1].contains(pos)) {
+        if (spyUI.getFnTagRange(highlight[0], highlight[1]).contains(pos)) {
             return new Promise<vscode.Hover>(resolve => {
                 resolve(spyStatistics.getComplexity(highlight, cancel));
             });

@@ -82,7 +82,7 @@ function applyDecorations() {
             for(var lineIndex = 1; lineIndex < doc.lineCount; lineIndex++) {
                 if (doc.lineAt(lineIndex).text.startsWith("def ")) {
                     if (doc.lineAt(lineIndex - 1).text.startsWith("#spy")) {
-                        console.log("spyUI found tag on line " + lineIndex);
+                        console.log("spyUI found tag on line " + (lineIndex - 1));
                         spyPinkRanges.push(doc.lineAt(lineIndex - 1).range);
                         const range = getTagFnRange(doc, lineIndex);
                         spyDecoList.push([doc, range, lineIndex]);
@@ -116,10 +116,13 @@ function applyDecorations() {
     });
 }
 
+// Convert a #spy tag into a range representing its function
 function getTagFnRange(doc: vscode.TextDocument, line: number) {
     // Take advantage of python indentation requirements.
+    // coverage.py also uses indents to track exclusion blocks.
     const remaindertext = doc.getText(new vscode.Range(line, 0, doc.lineCount, 0)).split('\n');
     const indent = getIndent(remaindertext[0])
+    // TODO There is a possibility of causing incorrect coverage highlights for functions with multiline function definitions.
     for (let i = 1; i < remaindertext.length; i++) {
         if (getIndent(remaindertext[i]) <= indent) {
             return new vscode.Range(line + 2, 0, line + i, 0);
@@ -127,6 +130,13 @@ function getTagFnRange(doc: vscode.TextDocument, line: number) {
     }
     console.warn("No end range found, assuming EOF...");
     return new vscode.Range(line + 2, 0, line + doc.lineCount, 0);
+}
+
+// Convert a range encapsulating a python function to a range representing its #spy tag
+export function getFnTagRange(doc: vscode.TextDocument, range: vscode.Range) {
+    const startLine = range.start.line;
+    // TODO There is a possibility of causing incorrect coverage highlights for functions with multiline function definitions.
+    return doc.lineAt(startLine - 3).range;
 }
 
 function getIndent(text: string) : number {
