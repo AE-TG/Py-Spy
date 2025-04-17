@@ -60,13 +60,16 @@ def generate_inputs(args, ints=[], floats=[], strs=[]):
      - commonly mishandled values of the detected type, plus any provided additional special
        test values for the main builtin numeric types (`int`s and `float`s) or text type (`str`s),
        plus commonly mishandled values related to the provided special test values.
-     - if the type is not one of those three basic types, attempts to return a default-constructed
+     - if the type is not one of the basic types or a bool, attempts to return a default-constructed
        object of that type, or nothing (an empty list) if not possible.
     """
     outputs = []
     for arg in args:
         if (arg is None or type(arg) is None):
             outputs.append([])
+        if (arg is bool or type(arg) is bool):
+            booltypes = [True, False]
+            outputs.append(booltypes)
         elif (arg is int or type(arg) is int):
             # In Python, unlike other languages, `None` is a NoneType and not a lack of value in some other type (looking at you, C). We exclude it from testing to avoid spurious errors in user code.
             inttypes = [-1, 1, 0, sys.maxsize, -sys.maxsize - 1, 13, 255, 256, 257, 65535, 65536, 65537, 2147483647]
@@ -88,6 +91,10 @@ def generate_inputs(args, ints=[], floats=[], strs=[]):
         elif (arg is str or type(arg) is str):
             strtypes = ["", "'", "\r\n", "\n", "admin", "password", "12345", "\0", "\0foo", "\\", "\u0394", "a\xac\u1234\u20ac\U00008000"]
             strtypes.extend(strs)
+            strtypes.extend(list(map(lambda x: str(x), ints)))
+            strtypes.extend(list(map(lambda x: str("x"*x), ints)))
+            strtypes.extend(list(map(lambda x: str("x"*(x + 1)), ints)))
+            strtypes.extend(list(map(lambda x: str("x"*(x - 1)), ints)))
             # Mangling string literals is unlikely to provide additional useful values to test, so don't do anything weird with the special test values.
             outputs.append(strtypes)
         else: # attempt to default construct the type
