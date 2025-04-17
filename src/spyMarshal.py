@@ -73,8 +73,10 @@ def test(args):
         mod = load_module(args)
         try:
             cov = coverage.Coverage(branch=True)
-            # TODO - set option doesnt seem to actually work here
-            # cov.set_option("report:exclude_also", ["^\s*#.*\n", "\sexcept .* as .*", "\sexcept:"]) # exclude comments and exception lines
+            # exclude comments and exception lines
+            cov.exclude(r"^\s*#.*\n")
+            cov.exclude(r"\sexcept .* as .*")
+            cov.exclude(r"\sexcept:")
             try:
                 for ln in args.evallines:
                     # iterate over inputs
