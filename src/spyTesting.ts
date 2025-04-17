@@ -16,15 +16,33 @@ export function generateTestResults(decoFunctions: spyUI.spyDeco[]) {
         if (decoFunctions.length == 0)
         {
             // wait for UI to find tagged functions
-            setTimeout(spyUI.getSpyDecos, 2000);
-            setTimeout(runTests, 2050, spyUI.getSpyDecos());
+            // TODO
+            //setTimeout(spyUI.getSpyDecos, 2000);
+            //setTimeout(runTests, 2050, spyUI.getSpyDecos());
         }
         else
         {
-            runTests(decoFunctions);
+            type testDict = { [file: string] : number[] }
+            let files: testDict = {}
+            for (var deco of decoFunctions) {
+                if (files[deco[0].fileName]) {
+                    files[deco[0].fileName].push(deco[2] + 1)
+                }
+                else {
+                    files[deco[0].fileName] = [deco[2] + 1]
+                }
+            }
+            for (var file in files) {
+                try {
+                    spyMarshal.coverageTest(file, files[file]);
+                }
+                catch {
+                    // If you made it here, you somehow crashed the spyMarshal/PythonShell interpreter itself.
+                    vscode.window.showErrorMessage('PySpy error testing ' + file + ' - Python crashed!');
+                }
+                parseCovReport(file, decoFunctions);
+            }
         }
-        
-        //parseCovReports(fn);
     }
 }
 
@@ -37,53 +55,44 @@ export async function deleteTestCache() {
     }
 }
 
-function runTests(decoFunctions: spyUI.spyDeco[]) {
-    decoFunctions.forEach(fn => {
-        unitTest(fn);
-        parseCovReports(fn);
-    });
-}
-
-async function unitTest(fn: spyUI.spyDeco) {
-    let fSignature: string = fn[0].lineAt(fn[2]).text;
-    console.log("testing " + fSignature + " in " + fn[0].fileName);
+async function parseCovReport(filename: string, decoFunctions: spyUI.spyDeco[]) {
+    const name = filename + ".covjson"
     try {
-        spyMarshal.coverageTest(fn[0].fileName, fn);
+        const covjson: string = fs.readFileSync(name).toString();
+        if (covjson.length <= 0) {
+            return;
+        }
+
+        const json = JSON.parse(covjson);
+        // get all executed lines from all code as an array of distinct line numbers
+        const exec_lines = [... new Set(...find(json, "executed_lines"))] as number[]
+        // get all intentionally skipped lines from all code as an array of distinct line numbers
+        const skip_lines = [... new Set(...find(json, "excluded_lines"))] as number[]
+        // get all lines belonging to functions in the file that SHOULD be covered
+        let fLines: number[] = []
+        for (var fn of decoFunctions) {
+            if (fn[0].fileName == filename) {
+                fLines.push(...[...Array(fn[1].end.line - fn[1].start.line).keys()].map(e => e + fn[1].start.line))
+            }
+        }
+        let miss_lines = fLines;
+        // missed lines are only lines that should be covered but are not executed or skipped
+        miss_lines = miss_lines.filter(n => !exec_lines.includes(n));
+        miss_lines = miss_lines.filter(n => !skip_lines.includes(n));
+
+        const td = await vscode.workspace.openTextDocument(filename);
+        spyUI.resetCoverageDecoLists(td);
+            for(var line of exec_lines) {
+            var deco: spyUI.spyDeco = [td, td.lineAt(line - 1).range, line - 1]
+            spyUI.addCoverageDeco(deco, true);
+        }
+        for(var line of miss_lines) {
+            var deco: spyUI.spyDeco = [td, td.lineAt(line - 1).range, line - 1]
+            spyUI.addCoverageDeco(deco, false);
+        }
     }
     catch {
-        // If you made it here, you somehow crashed the spyMarshal/PythonShell interpreter itself.
-        vscode.window.showErrorMessage('PySpy error testing ' + fn[0].lineAt(fn[2]+1).text + ' - Python crashed!');
-    }
-}
-
-function parseCovReports(fn: spyUI.spyDeco) {
-    // concatenate reports
-    // TODO get all files matching pattern
-    const name = fn[0].fileName + (fn[2] + 1) + ".covjson"
-    const covjson: string = fs.readFileSync(name).toString();
-    if (covjson.length <= 0) {
-        return;
-    }
-    
-    const json = JSON.parse(covjson)
-    // get all executed lines from all code called in the file that fn belongs to as an array of distinct lines
-    const exec_lines = [... new Set(...find(json, "executed_lines"))] as number[]
-    // get all intentionally skipped lines from all code called in the file that fn belongs to as an array of distinct lines
-    const skip_lines = [... new Set(...find(json, "excluded_lines"))] as number[]
-    // get all not executed lines in the function
-    const range = fn[1].end.line - fn[1].start.line
-    let miss_lines = [...Array(range).keys()].map(e => e + fn[1].start.line) as number[]
-    miss_lines = miss_lines.filter(n => !exec_lines.includes(n)); // miss lines is all lines except executed lines
-    miss_lines = miss_lines.filter(n => !skip_lines.includes(n)); // miss lines is all lines except executed lines and skipped lines
-
-    spyUI.resetCoverageDecoLists(fn[0]);
-    for(var line of exec_lines) {
-        var deco: spyUI.spyDeco = [fn[0], fn[0].lineAt(line-1).range, line]
-        spyUI.addCoverageDeco(deco, true);
-    }
-    for(var line of miss_lines) {
-        var deco: spyUI.spyDeco = [fn[0], fn[0].lineAt(line-1).range, line]
-        spyUI.addCoverageDeco(deco, false);
+        console.warn("Unable to apply coverage test highlights - coverage report " + filename + " not found.");
     }
 }
 

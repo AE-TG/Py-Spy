@@ -11,12 +11,15 @@ export function getPyVersion(ctx: vscode.ExtensionContext) {
     return versionParts[0] + versionParts[1];
 }
 
-export async function coverageTest(report: string, fn: spyUI.spyDeco) {
-    const pycFile = spyFS.getPycFile(fn[0].fileName);
+export async function coverageTest(filename: string, lines: number[]) {
     let options = {
         scriptPath: xPath,
-        args: ["-f", fn[0].fileName, "-p", pycFile, "-r", report, "-l", String(fn[2] + 1)]
+        // TODO
+        args: ["-f", filename, "-l"]
     };
+    lines.forEach(line => {
+        options.args.push(String(line))
+    });
     await PythonShell.run("src/spyMarshal.py", options).then(messages => {
         messages.forEach(msg => {
             messageHandler(msg);

@@ -1,8 +1,8 @@
 import argparse
 import coverage
 import importlib.machinery
-import inspect
 import marshal
+import py_compile
 import sys
 import spyInputs
 import types
@@ -11,9 +11,14 @@ import types
 sys.stdin.reconfigure(encoding='utf-8')
 sys.stdout.reconfigure(encoding='utf-8')
 
-def getcodeobjects(args):
+def getcodeobjects(filename):
+    pycfile = ""
     try:
-        with open(args.pycfile, 'rb') as pyc:
+        pycfile = py_compile.compile(filename, doraise=True)
+    except Exception as ex:
+        print("[E} Unable to load compile pycfile " + str(ex))
+    try:
+        with open(pycfile, 'rb') as pyc:
             seek_bytes = 8
             if sys.version_info >= (3,2):
                 seek_bytes += 4
@@ -27,25 +32,18 @@ def getcodeobjects(args):
             code_obj = marshal.load(pyc)
             return code_obj
     except Exception as ex:
-        print("[E} Unable to load pyc file " + args.pycfile + str(ex))
-        sys.exit(1)
+        print("[E} Unable to load pyc file " + pycfile + str(ex))
 
-def get_co(args):
+def get_co(filename, ln):
     """
     Extract a code object matching the desired signature from the compiled source
     represented in args
     """
-    code = getcodeobjects(args)
+    code = getcodeobjects(filename)
     for byteline in code.co_consts:
         if type(byteline) is types.CodeType:
-            if (byteline.co_firstlineno == args.evalline):
+            if (byteline.co_firstlineno == ln):
                 return byteline
-
-def get_source(code_obj):
-    """
-    Convert a code object back into representative source code (plain text).
-    """
-    return inspect.getsource(code_obj)
 
 def inputs(code_obj, func):
     """
@@ -65,7 +63,7 @@ def load_module(args):
     return mod
 
 def reportname(args):
-    return str(args.reportname) + str(args.evalline) + ".covjson"
+    return str(args.filename) + ".covjson"
 
 def test(args):
     if sys.version_info < (3,9):
@@ -78,36 +76,34 @@ def test(args):
             # TODO - set option doesnt seem to actually work here
             # cov.set_option("report:exclude_also", ["^\s*#.*\n", "\sexcept .* as .*", "\sexcept:"]) # exclude comments and exception lines
             try:
-                # iterate over inputs
-                co_ = get_co(args)
-                for inputset in inputs(co_, getattr(mod, co_.co_name)):
-                    try:
-                        # run the code
-                        cov.start()
-                        getattr(mod, co_.co_name)(*inputset)
-                        cov.stop()
-                        # unary * is the unpack operator in python,
-                        # equivalent to ... spread operator in other languages
-                    except Exception as ex:
-                        print("[W} Testing throws error with inputs " + str(inputset) + str(ex))
+                for ln in args.evallines:
+                    # iterate over inputs
+                    co_ = get_co(args.filename, ln)
+                    for inputset in inputs(co_, getattr(mod, co_.co_name)):
+                        try:
+                            # run the code
+                            cov.start()
+                            getattr(mod, co_.co_name)(*inputset)
+                            cov.stop()
+                            # unary * is the unpack operator in python,
+                            # equivalent to ... spread operator in other languages
+                        except Exception as ex:
+                            print("[W} Testing throws error with inputs " + str(inputset) + str(ex))
                 try:
                     cov.json_report(morfs=args.filename, outfile=reportname(args), pretty_print=True)
                 except Exception as ex:
-                    print("[W} Coverage was unable to output summaryfile." + str(ex))
-                print("[I} Test OK!")
+                    print("[E} Coverage was unable to output summaryfile. " + str(ex))
                 return
             except Exception as ex:
-                return print("[E} Could not generate inputs for test. Function under test may not have been found." + str(ex))
+                return print("[E} Could not generate inputs for test. Function under test may not have been found. " + str(ex))
         except Exception as ex:
-            return print("[E} Could not start coverage.py for testing. Is it installed?" + str(ex))
+            return print("[E} Could not start coverage.py for testing. Is it installed? " + str(ex))
     except Exception as ex:
-        return print("[E} Unable to load code under test into namespace or module. Check for syntax errors." + str(ex))
+        return print("[E} Unable to load code under test into namespace or module. Check for syntax errors. " + str(ex))
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-f', dest='filename', required=True, action='store', type=str) # python source file
-parser.add_argument('-p', dest='pycfile', required=True, action='store', type=str) # pyc file. # TODO We could technically bypass this using just filename.
-parser.add_argument('-l', dest='evalline', required=True, action='store', type=int) # line number of function under test
-parser.add_argument('-r', dest='reportname', required=True, action='store', type=str) # name of the report file to generate for this test. Will append evalline & + .covjson.
+parser.add_argument('-f', '--file', dest='filename', required=True, action='store', type=str) # python source file
+parser.add_argument('-l', '--lines', dest='evallines', required=True, action='store', type=int, nargs='*') # line number of function(s) under test
 args = parser.parse_args()
 test(args)
