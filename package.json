@@ -3,7 +3,7 @@
   "displayName": "PySpy",
   "description": "Automated tool for analysing and testing Python code snippets in real time.",
   "icon": "assets/play_512.png",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "preview": true,
   "engines": {
     "vscode": "^1.96.0"
@@ -28,6 +28,11 @@
     "configuration": {
       "title": "PySpy",
       "properties": {
+        "spy.AnalysisEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether or not to attempt static analysis and linting for tagged functions."
+        },
         "spy.RadonInstallLocation": {
           "type": ["string", "null"],
           "default": null,
@@ -36,7 +41,7 @@
         "spy.TestingEnabled": {
           "type": "boolean",
           "default": true,
-          "description": "Whether or not to attempt interface and coverage testing for targeted functions."
+          "description": "Whether or not to attempt interface and coverage testing for tagged functions."
         }
       }
     }

@@ -39,7 +39,7 @@ let testReports : [string, number, string][] = []
 export function addTestReportHover(filename: string, line: number, info: string) {
     testReports.push([filename, line, info])
 }
-function clearTestReportHovers(filename: string) {
+export function clearTestReportHovers(filename: string) {
     testReports = testReports.filter((doc) => doc[0] != filename);
 }
 export function getTestReportHovers(filename: string, line: number) : string | undefined {

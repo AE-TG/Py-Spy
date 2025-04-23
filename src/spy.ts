@@ -1,3 +1,4 @@
+import * as spyAnalysis from './spyAnalysis';
 import * as spyCompile from './spyCompile';
 import * as spyMarshal from './spyMarshal';
 import * as spyFS from './spyFS';
@@ -23,11 +24,6 @@ export function scanUI(ctx: vscode.ExtensionContext) {
 export function removeUI() {
     spyUI.removeDecorations();
 }
-export function resetCC(doc: vscode.TextDocument) {
-    // contents of this file have changed, coverage highlighting is no longer accurate
-    spyTesting.deleteTestCache();
-    spyUI.resetCoverageDecoLists(doc);
-}
 
 export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument) {
     if (ctx && doc) {
@@ -37,6 +33,7 @@ export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument)
         if (doc.fileName.endsWith(".py")) {
             spyStatistics.generateRadonCache([doc.fileName]);
             //spyCompile.build(doc.fileName); // let coverage testing compile instead
+            spyAnalysis.generateAnalysisResults(doc.fileName);
             spyTesting.generateTestResults(spyUI.getSpyDecos(doc));
         }
         spyUI.updateDecorations(1000); // update again to collect the test results
@@ -57,6 +54,7 @@ export async function deleteCache() {
     for await (const file of spySet) {
         await spyCompile.removeBuildFile(file);
     }
+    await spyAnalysis.deleteCache();
     await spyTesting.deleteTestCache();
     await spyStatistics.deleteRadonCache(spySet);
 }
