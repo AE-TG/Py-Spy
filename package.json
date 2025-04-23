@@ -2,8 +2,8 @@
   "name": "spy",
   "displayName": "Spy",
   "description": "Automated tool for analysing and testing Python code snippets in real time.",
-  "icon": "assets/play.png",
-  "version": "0.0.6",
+  "icon": "assets/play_512.png",
+  "version": "0.0.7",
   "engines": {
     "vscode": "^1.96.0"
   },
