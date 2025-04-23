@@ -15,34 +15,40 @@ export async function setInfo(ctx: vscode.ExtensionContext) {
 }
 export function setupUI(ctx: vscode.ExtensionContext) {
     spyUI.createDecorations(ctx);
-    spyUI.updateDecorations(ctx, 0);
+    spyUI.updateDecorations(0);
 }
 export function scanUI(ctx: vscode.ExtensionContext) {
-    spyUI.updateDecorations(ctx);
+    spyUI.updateDecorations();
 }
 export function removeUI() {
     spyUI.removeDecorations();
+}
+export function resetCC(doc: vscode.TextDocument) {
+    // contents of this file have changed, coverage highlighting is no longer accurate
+    spyTesting.deleteTestCache();
+    spyUI.resetCoverageDecoLists(doc);
 }
 
 export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument) {
     if (ctx && doc) {
         // A specific file was opened or saved.
 
-        spyUI.updateDecorations(ctx, 0);
+        spyUI.updateDecorations(0);
         if (doc.fileName.endsWith(".py")) {
             spyStatistics.generateRadonCache([doc.fileName]);
-            spyCompile.build(doc.fileName);
+            //spyCompile.build(doc.fileName); // let coverage testing compile instead
             spyTesting.generateTestResults(spyUI.getSpyDecos(doc));
         }
-        spyUI.updateDecorations(ctx); // update again to collect the test results
+        spyUI.updateDecorations(1000); // update again to collect the test results
     }
     else {
         const spySet = spyFS.getSpyFiles();
         spyStatistics.generateRadonCache(spySet);
         spySet.forEach(file => {
-            spyCompile.build(file);
+            //spyCompile.build(file); // let coverage testing compile instead
         });
-        spyTesting.generateTestResults([]); // TODO because the previous editors are closed, there is an issue with this only finding tags in the previous file because the UI has not updated.
+        spyTesting.generateTestResults([]);
+        spyUI.updateDecorations(2000);
     }
 }
 export async function deleteCache() {
@@ -55,7 +61,7 @@ export async function deleteCache() {
     await spyStatistics.deleteRadonCache(spySet);
 }
 
-export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
+export function provideComplexityHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
     for (let highlight of spyUI.getSpyDecos(file)) {
         if (spyUI.getFnTagRange(highlight[0], highlight[1]).contains(pos)) {
             return new Promise<vscode.Hover>(resolve => {
@@ -63,5 +69,22 @@ export function provideHover(file: vscode.TextDocument, pos: vscode.Position, ca
             });
         }
     };
-    return null;
+    return undefined;
+}
+
+export function provideTestingHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
+    for (let highlight of spyUI.getSpyDecos(file)) {
+        if (spyUI.getFnTagRange(highlight[0], highlight[1]).contains(pos)) {
+            return new Promise<vscode.Hover>((resolve, reject) => {
+                const str = spyTesting.getTestReportHovers(file.fileName, pos.line + 1); // line is zero-indexed
+                if (str)
+                {
+                    resolve(new vscode.Hover(str, highlight[1]));
+                }
+                reject(str);
+                return str;
+            });
+        }
+    };
+    return undefined;
 }

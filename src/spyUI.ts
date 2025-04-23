@@ -1,17 +1,34 @@
+import * as spyTesting from './spyTesting';
 import * as vscode from 'vscode';
 
 
 // set up decoration types for SPY callouts in editor
-let pinkHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
+let pinkUnknownHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
+let pinkPassHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
+let pinkFailHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
 let greenFaintHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
 let redFaintHighlight: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({});
 export function createDecorations(ctx: vscode.ExtensionContext) {
-    const pinkRenderOptions = {} as vscode.DecorationRenderOptions;
-    pinkRenderOptions.backgroundColor = "#FF339977";
-    pinkRenderOptions.gutterIconPath = ctx.asAbsolutePath("assets/play_16.png");
-    pinkRenderOptions.gutterIconSize = "auto";
-    pinkRenderOptions.isWholeLine = true;
-    pinkHighlight = vscode.window.createTextEditorDecorationType(pinkRenderOptions);
+    const pinkUnknownRenderOptions = {} as vscode.DecorationRenderOptions;
+    pinkUnknownRenderOptions.backgroundColor = "#FF339977";
+    pinkUnknownRenderOptions.gutterIconPath = ctx.asAbsolutePath("assets/question_16.png");
+    pinkUnknownRenderOptions.gutterIconSize = "auto";
+    pinkUnknownRenderOptions.isWholeLine = true;
+    pinkUnknownHighlight = vscode.window.createTextEditorDecorationType(pinkUnknownRenderOptions);
+
+    const pinkPassRenderOptions = {} as vscode.DecorationRenderOptions;
+    pinkPassRenderOptions.backgroundColor = "#FF339977";
+    pinkPassRenderOptions.gutterIconPath = ctx.asAbsolutePath("assets/play_16.png");
+    pinkPassRenderOptions.gutterIconSize = "auto";
+    pinkPassRenderOptions.isWholeLine = true;
+    pinkPassHighlight = vscode.window.createTextEditorDecorationType(pinkPassRenderOptions);
+
+    const pinkFailRenderOptions = {} as vscode.DecorationRenderOptions;
+    pinkFailRenderOptions.backgroundColor = "#FF339977";
+    pinkFailRenderOptions.gutterIconPath = ctx.asAbsolutePath("assets/stop_16.png");
+    pinkFailRenderOptions.gutterIconSize = "auto";
+    pinkFailRenderOptions.isWholeLine = true;
+    pinkFailHighlight = vscode.window.createTextEditorDecorationType(pinkFailRenderOptions);
 
     const greenFaintRenderOptions = {} as vscode.DecorationRenderOptions;
     greenFaintRenderOptions.backgroundColor = "#00AA0022";
@@ -25,14 +42,13 @@ export function createDecorations(ctx: vscode.ExtensionContext) {
 }
 
 let updateTimer: NodeJS.Timeout | undefined = undefined;
-export function updateDecorations(ctx: vscode.ExtensionContext, delay: number = 1000) {
+export function updateDecorations(delay: number = 1000) {
     // limit the UI updates to when the user is inactive for 1000ms or longer
-    resetCoverageDecoLists(); // it would be great to adjust these up and down as edits are made rather than delete entirely, but that is a whole barrel of context issues.
     if (updateTimer) {
         clearTimeout(updateTimer);
         updateTimer = undefined;
     }
-    updateTimer = setTimeout(applyDecorations, delay);
+    updateTimer = setTimeout(applyDecorations, delay, true);
 }
 
 // Let other spy functionality discover where to focus
@@ -60,6 +76,8 @@ export function resetCoverageDecoLists(file?: vscode.TextDocument) {
         spyCoverageFailList = [];
     }
 }
+
+let coverageTimer: NodeJS.Timeout | undefined = undefined;
 export function addCoverageDeco(newDeco: spyDeco, pass: boolean) {
     if (pass) {
         spyCoveragePassList.push(newDeco);
@@ -67,9 +85,15 @@ export function addCoverageDeco(newDeco: spyDeco, pass: boolean) {
     else {
         spyCoverageFailList.push(newDeco);
     }
+    // Let the coverage test report parser make changes for up to 150ms before showing them.
+    if (coverageTimer) {
+        clearTimeout(coverageTimer);
+        coverageTimer = undefined;
+    }
+    coverageTimer = setTimeout(applyDecorations, 150);
 }
 
-function applyDecorations() {
+function applyDecorations(checkTests?:boolean) {
     // get only the open editor windows that are python files with SPY decorators
     vscode.window.visibleTextEditors.forEach(ed => {
         spyDecoList = [];
@@ -78,19 +102,22 @@ function applyDecorations() {
             console.log("spyUI scanning " + doc.fileName);
 
             // #spy tag highlights
-            let spyPinkRanges: vscode.Range[] = [];
             for(var lineIndex = 1; lineIndex < doc.lineCount; lineIndex++) {
                 if (doc.lineAt(lineIndex).text.startsWith("def ")) {
                     if (doc.lineAt(lineIndex - 1).text.startsWith("#spy")) {
                         console.log("spyUI found tag on line " + (lineIndex - 1));
-                        spyPinkRanges.push(doc.lineAt(lineIndex - 1).range);
                         const range = getTagFnRange(doc, lineIndex);
                         spyDecoList.push([doc, range, lineIndex]);
                     }
                 }
             }
 
-            // code coverage pass/fail highlights
+            // If there's a code coverage report lying around, parse it
+            if (checkTests) {
+                spyTesting.parseCovReport(doc.fileName, spyDecoList);
+            }
+
+            // If code coverage pass/fail highlights are ready to show, apply them
             let spyGreenFaintRanges: vscode.Range[] = [];
             spyCoveragePassList.forEach(deco => {
                 if (deco[0] == doc) {
@@ -104,10 +131,37 @@ function applyDecorations() {
                 }
             });
 
+            // Convert pink tag highlights to pass/fail markers
+            let spyPinkUnknownRanges: vscode.Range[] = [];
+            let spyPinkPassRanges: vscode.Range[] = [];
+            let spyPinkFailRanges: vscode.Range[] = [];
+            spyDecoList.forEach(deco => {
+                if(spyTesting.getTestReportHovers(deco[0].fileName, deco[2])) {
+                    // There is a failing test report for this tagged function
+                    spyPinkFailRanges.push(doc.lineAt(deco[2] - 1).range)
+                }
+                else {
+                    // if there are green highlights waiting to be applied, we know this was tested
+                    if (spyGreenFaintRanges.length > 0)
+                    {
+                        spyPinkPassRanges.push(doc.lineAt(deco[2] - 1).range)
+                    }
+                    // otherwise tests not yet run
+                    else 
+                    {
+                        spyPinkUnknownRanges.push(doc.lineAt(deco[2] - 1).range)
+                    }
+                }
+            });
+
 
             // Remove old decorations before applying new ones.
-            ed.setDecorations(pinkHighlight, []);
-            ed.setDecorations(pinkHighlight, spyPinkRanges);
+            ed.setDecorations(pinkUnknownHighlight, []);
+            ed.setDecorations(pinkUnknownHighlight, spyPinkUnknownRanges);
+            ed.setDecorations(pinkPassHighlight, []);
+            ed.setDecorations(pinkPassHighlight, spyPinkPassRanges);
+            ed.setDecorations(pinkFailHighlight, []);
+            ed.setDecorations(pinkFailHighlight, spyPinkFailRanges);
             ed.setDecorations(greenFaintHighlight, []);
             ed.setDecorations(greenFaintHighlight, spyGreenFaintRanges);
             ed.setDecorations(redFaintHighlight, []);
@@ -145,7 +199,8 @@ function getIndent(text: string) : number {
 
 export function removeDecorations() {
     vscode.window.visibleTextEditors.forEach(ed => {
-        ed.setDecorations(pinkHighlight, []);
+        ed.setDecorations(pinkPassHighlight, []);
+        ed.setDecorations(pinkFailHighlight, []);
         ed.setDecorations(greenFaintHighlight, []);
         ed.setDecorations(redFaintHighlight, []);
     });

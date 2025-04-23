@@ -7,6 +7,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set up addons
 	spy.setInfo(context);
 	spy.setupUI(context);
+	spy.deleteCache();
 
 	// Run updates once
 	spy.scanUI(context);
@@ -27,6 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}, null, context.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(event => {
 		if (event.document) {
+			spy.resetCC(event.document);
 			spy.scanUI(context);
 			spy.scanCC(context, event.document);
 		}
@@ -45,7 +47,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.languages.registerHoverProvider('python', {
 		provideHover(document, position, token) {
-			return spy.provideHover(document, position, token);
+			return spy.provideComplexityHover(document, position, token);
+		}
+	}));
+	context.subscriptions.push(vscode.languages.registerHoverProvider('python', {
+		provideHover(document, position, token) {
+			return spy.provideTestingHover(document, position, token);
 		}
 	}));
 
