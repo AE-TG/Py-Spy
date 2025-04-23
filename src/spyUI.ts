@@ -141,7 +141,8 @@ function applyDecorations(checkTests?:boolean) {
                     spyPinkFailRanges.push(doc.lineAt(deco[2] - 1).range)
                 }
                 else {
-                    // if there are green highlights waiting to be applied, we know this was tested
+                    // If there are green highlights waiting to be applied, we know this was tested
+                    // This isn't strictly true - it may be preferable to default to fail/unknown rather than pass
                     if (spyGreenFaintRanges.length > 0)
                     {
                         spyPinkPassRanges.push(doc.lineAt(deco[2] - 1).range)

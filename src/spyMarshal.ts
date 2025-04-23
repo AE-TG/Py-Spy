@@ -29,6 +29,7 @@ export async function coverageTest(filename: string, lines: number[]) {
 function messageHandler(filename: string, msg: string) {
     if (msg.startsWith("[E} ")) {
         console.error(msg)
+        // TODO - if we get a serious error, consider finding a way to addTestReportHover tag for each function in the file
     }
     if (msg.startsWith("[W} ")) {
         console.warn(msg)
