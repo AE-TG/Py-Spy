@@ -1,4 +1,5 @@
 import * as spyFS from './spyFS';
+import * as spyTesting from './spyTesting';
 import * as spyUI from './spyUI';
 import * as vscode from 'vscode';
 import fs from 'fs';
@@ -58,12 +59,40 @@ async function parsePylintReport(file: string, retry: number = 0) {
         if (reportJson.length <= 0) {
             return;
         }
-        const json = JSON.parse(JSON.stringify(reportJson));
-        console.log(json);
+        let reportLines = reportJson.replace('\r',"").split('\n');
+        reportJson = outputFilter(reportLines).join("");
+
+        const json = JSON.parse(reportJson);
+        if (json.length > 0) {
+            const td = await vscode.workspace.openTextDocument(file);
+            const decos = spyUI.getSpyDecos(td);
+            decos.forEach(deco => {
+                for (var issue of json) {
+                    // TODO pylint config / rules filtering?
+                    if (deco[1].contains(new vscode.Position(issue["line"] - 1, 0))) {
+                        // this issue belongs to this deco (and the tagged fn it represents)
+                        spyTesting.addTestReportHover(file, deco[2] + 1, "Line " + issue["line"] + ": " + issue["message"]);
+                    }
+                }
+            });
+        }
     }
     else if (retry < 5)
     {
         setTimeout(parsePylintReport, 1000, file, retry+1)
         return;
     }
+}
+
+function outputFilter(rawLines: string[]) : string[] {
+    // terminal file IO also writes control and escape sequences; remove them.
+    let rv: string[] = [];
+    const unprintable = new RegExp('[^ -~]+', 'g');
+    const extraWhitespace = new RegExp('\\s{2,}', 'gm');
+    rawLines.forEach(line => {
+        const filt0 = line.replace(unprintable, "");
+        const filt1 = filt0.replace(extraWhitespace, " ");
+        rv.push(filt1);
+    });
+    return rv;
 }
