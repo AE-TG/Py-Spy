@@ -12,6 +12,11 @@
         - Mouseover will report potential input validation failures so you can instantaneously proof your code.
     - Mousing over the highlight provides code complexity characteristics for that function as determined by Radon (http://radon.readthedocs.org/).
 
+## Known Issues
+- VSCode in Browser is unsupported due to filesystem requirements.
+- Coverage testing marks comment lines as missed...which is correct, but unhelpful.
+- Coverage testing breaks down on overloaded/shadowed functions.
+
 ## Requirements
 
 - **Visual Studio Code**
@@ -19,7 +24,6 @@
 - Extension automatically installs the required **Python-Shell** package from **npm**.
 - (Optional) **Radon** integration.
 - (Optional) **coverage.py** integration.
-- VSCode in Browser is unsupported due to filesystem requirements.
 
 ## Implementation Details
 

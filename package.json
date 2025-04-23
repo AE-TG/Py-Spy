@@ -1,14 +1,16 @@
 {
   "name": "spy",
-  "displayName": "Spy",
+  "displayName": "PySpy",
   "description": "Automated tool for analysing and testing Python code snippets in real time.",
   "icon": "assets/play_512.png",
   "version": "0.0.7",
+  "preview": true,
   "engines": {
     "vscode": "^1.96.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Testing"
   ],
   "activationEvents": [
     "onLanguage:python"
