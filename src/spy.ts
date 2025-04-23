@@ -1,92 +1,90 @@
-import * as vscode from 'vscode';
 import * as spyCompile from './spyCompile';
-import * as spyCC from './spyCC';
+import * as spyMarshal from './spyMarshal';
 import * as spyFS from './spyFS';
-import * as spyInputs from './spyInputs';
+import * as spyStatistics from './spyStatistics';
+import * as spyTesting from './spyTesting';
 import * as spyUI from './spyUI';
+import * as vscode from 'vscode';
 
 
-let intervalID: NodeJS.Timeout;
-export function run(ctx: vscode.ExtensionContext, enable: boolean, intervalSeconds: number = 15) {
-    if (intervalID) {
-        console.log("stopping spy");
-        clearInterval(intervalID);
-    }
-    if (enable) {
-        console.log("starting spy");
-        runAll(ctx);
-        intervalID = setInterval(() => {
-            runAll(ctx)
-        }, intervalSeconds * 1000);
+export async function setInfo(ctx: vscode.ExtensionContext) {
+    spyFS.python.version = spyMarshal.getPyVersion(ctx);
+    if ((parseInt(spyFS.python.version.at(0)!) < 3) && ((parseInt(spyFS.python.version)) < 39)) {
+        vscode.window.showErrorMessage('PySpy detected Python version ' + spyFS.python.version + " - some features are disabled on versions lower than 3.9!");
     }
 }
-
 export function setupUI(ctx: vscode.ExtensionContext) {
     spyUI.createDecorations(ctx);
-    spyUI.updateDecorations(ctx, 1);
+    spyUI.updateDecorations(0);
 }
 export function scanUI(ctx: vscode.ExtensionContext) {
-    spyUI.updateDecorations(ctx, 1000);
+    spyUI.updateDecorations();
 }
-export function scanCC(fileName: string = "") {
-    if (fileName) {
-        spyCC.generateRadonCache([fileName]);
+export function removeUI() {
+    spyUI.removeDecorations();
+}
+export function resetCC(doc: vscode.TextDocument) {
+    // contents of this file have changed, coverage highlighting is no longer accurate
+    spyTesting.deleteTestCache();
+    spyUI.resetCoverageDecoLists(doc);
+}
+
+export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument) {
+    if (ctx && doc) {
+        // A specific file was opened or saved.
+
+        spyUI.updateDecorations(0);
+        if (doc.fileName.endsWith(".py")) {
+            spyStatistics.generateRadonCache([doc.fileName]);
+            //spyCompile.build(doc.fileName); // let coverage testing compile instead
+            spyTesting.generateTestResults(spyUI.getSpyDecos(doc));
+        }
+        spyUI.updateDecorations(1000); // update again to collect the test results
     }
     else {
-        spyCC.generateRadonCache(spyFS.getSpyFiles());
+        const spySet = spyFS.getSpyFiles();
+        spyStatistics.generateRadonCache(spySet);
+        spySet.forEach(file => {
+            //spyCompile.build(file); // let coverage testing compile instead
+        });
+        spyTesting.generateTestResults([]);
+        spyUI.updateDecorations(2000);
     }
 }
-export function provideHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
-    for (let highlight of spyUI.getSpyDecos()) {
-        if (highlight[0] == file) {
-            if (highlight[1].contains(pos)) {
-                return new Promise<vscode.Hover>(resolve => {
-                    resolve(spyCC.getComplexity(highlight, cancel));
-                });
-            }
+export async function deleteCache() {
+    let spySet = spyFS.getSpyFiles();
+    spySet = spyFS.getSpyFiles();
+    for await (const file of spySet) {
+        await spyCompile.removeBuildFile(file);
+    }
+    await spyTesting.deleteTestCache();
+    await spyStatistics.deleteRadonCache(spySet);
+}
+
+export function provideComplexityHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
+    for (let highlight of spyUI.getSpyDecos(file)) {
+        if (spyUI.getFnTagRange(highlight[0], highlight[1]).contains(pos)) {
+            return new Promise<vscode.Hover>(resolve => {
+                resolve(spyStatistics.getComplexity(highlight, cancel));
+            });
         }
     };
-    return null;
+    return undefined;
 }
 
-function runAll(ctx: vscode.ExtensionContext) {
-    //TODO check timing loop and adjust or run on user trigger
-
-    // Precompile python code as a simple way to check syntax errors.
-    spyCompile.build();
-
-    // Perform static analysis.
-    analyze(ctx);
-    //TODO yes this is unbelievably drastically simplified for now
-
-    // For decorated functions, test interesting input values to check for edge cases or unintended values/throws.
-    spyCompile.functionAnalysis(ctx);
-
-    /*
-    decoratedFns.forEach(fn => {
-        let inputTypes = spyInputs.getInputTypes(fn);
-        if (spyInputs.isPODInput(inputTypes)) {
-            spyInputs.testInputs(fn, spyInputs.generateInputs(inputTypes));
+export function provideTestingHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {
+    for (let highlight of spyUI.getSpyDecos(file)) {
+        if (spyUI.getFnTagRange(highlight[0], highlight[1]).contains(pos)) {
+            return new Promise<vscode.Hover>((resolve, reject) => {
+                const str = spyTesting.getTestReportHovers(file.fileName, pos.line + 1); // line is zero-indexed
+                if (str)
+                {
+                    resolve(new vscode.Hover(str, highlight[1]));
+                }
+                reject(str);
+                return str;
+            });
         }
-    });
-    */
-
-    // Compute some statistics.
-    getStatistics();
+    };
+    return undefined;
 }
-
-function analyze(ctx: vscode.ExtensionContext) {
-    return false;
-}
-
-function getStatistics() {
-    //TODO complexity
-    //TODO code coverage
-    //TODO % decorated functions
-    //TODO const literals
-    //TODO nested calls
-    //TODO timing?
-    return 0;
-}
-
-

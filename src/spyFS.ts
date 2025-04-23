@@ -31,7 +31,7 @@ async function findSpyDecorators() {
         let doc: vscode.TextDocument = await vscode.workspace.openTextDocument(file);
         for(var lineIndex = 1; lineIndex < doc.lineCount; lineIndex++) {
             if (doc.lineAt(lineIndex).text.startsWith("def ")) {
-                if (doc.lineAt(lineIndex - 1).text.startsWith("@spy")) {
+                if (doc.lineAt(lineIndex - 1).text.startsWith("#spy")) {
                     let fName: string = trimFunctionName(doc.lineAt(lineIndex).text);
                     decoFnList.push([doc.fileName, fName]);
                 }
@@ -47,11 +47,32 @@ function trimFunctionName(line: string) {
 }
 
 // Convert a pathlike string to a sufficiently representative, sufficiently unique string name.
-// Used by spyCC for naming Radon cache files.
 export function cleanPathChars(path: string) : string {
     path = path.replaceAll('/',"");
     path = path.replaceAll('\\',"");
     path = path.replaceAll(".","-")
     path = path.replaceAll(":","_");
     return path;
+}
+
+// Split a pathlike string into the pair [path_except_final_segment, final_segment].
+// For arguments that represent filenames, final_segment is strictly the file name
+// and path_except_final_segment is the directory in which it is located.
+export function getFileFromPath(path: string) : [string, string] {
+    path = path.replaceAll('\\',"/");
+    let tokens = path.split('/');
+    let file = tokens.at(-1) ?? "";
+    path = tokens.slice(0, -1).join('/');
+    return [path, file];
+}
+
+export function windowsify(path: string) : string {
+    return '"' + path.replaceAll('/', '\\') + '"';
+}
+
+export const python: { version: string } = { version: "undefined" };
+export function getPycFile(fileName: string) : string {
+    const [path, file] = getFileFromPath(fileName);
+    const pycFile = path + '/__pycache__/' + file.split(".py").at(0) + ".cpython-" + python.version + ".pyc";
+    return pycFile;
 }
