@@ -28,7 +28,6 @@ export function activate(context: vscode.ExtensionContext) {
 	}, null, context.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(event => {
 		if (event.document) {
-			spy.resetCC(event.document);
 			spy.scanUI(context);
 			spy.scanCC(context, event.document);
 		}

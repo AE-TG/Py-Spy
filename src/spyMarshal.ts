@@ -3,6 +3,7 @@ import * as spyTesting from './spyTesting';
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell'
 
+
 let xPath: string;
 export function getPyVersion(ctx: vscode.ExtensionContext) {
     xPath = ctx.extensionPath
@@ -19,14 +20,15 @@ export async function coverageTest(filename: string, lines: number[]) {
     lines.forEach(line => {
         options.args.push(String(line))
     });
+    spyTesting.clearTestReportHovers(filename);
     await PythonShell.run("src/spyCoverage.py", options).then(messages => {
         messages.forEach(msg => {
-            messageHandler(filename, msg);
+            testMessageHandler(filename, msg);
         });
     });
 }
 
-function messageHandler(filename: string, msg: string) {
+function testMessageHandler(filename: string, msg: string) {
     if (msg.startsWith("[E} ")) {
         console.error(msg)
         // TODO - if we get a serious error, consider finding a way to addTestReportHover tag for each function in the file
@@ -44,5 +46,3 @@ function messageHandler(filename: string, msg: string) {
         }
     } 
 }
-
-
