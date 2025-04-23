@@ -42,7 +42,6 @@ def get_co(filename, ln):
     """
     code = getcodeobjects(filename)
     for byteline in code.co_consts:
-        print("[W} " + str(byteline))
         if type(byteline) is types.CodeType:
             if (byteline.co_firstlineno == ln):
                 return byteline
@@ -58,11 +57,15 @@ def inputs(code_obj, func):
     return iter
 
 def load_module(args):
-    loader = importlib.machinery.SourceFileLoader('__main__', args.filename)
-    spec = importlib.util.spec_from_loader(loader.name, loader)
+    module_name = 'PySpy_test_module'
+    spec = importlib.util.spec_from_file_location(module_name, args.filename)
+    if spec is None:
+        print("[E} Unable to create module from "+ args.filename)
+        sys.exit(1)
+    
     mod = importlib.util.module_from_spec(spec)
-    print("[W} mod " + str(dir(mod)))
-    loader.exec_module(mod)
+    sys.modules[module_name] = mod
+    spec.loader.exec_module(mod)
     return mod
 
 def reportname(args):
@@ -113,4 +116,11 @@ parser.add_argument('-f', '--file', dest='filename', required=True, action='stor
 parser.add_argument('-l', '--lines', dest='evallines', required=True, action='store', type=int, nargs='*') # line number of function(s) under test
 args = parser.parse_args()
 os.chdir(args.workspace)
+# python may or may not care what cwd is when it checks for modules, but it does care what the path is.
+directory1 = os.path.dirname(args.filename)
+directory2 = args.workspace
+if directory1 not in sys.path:
+    sys.path.insert(0, directory1)
+if directory2 not in sys.path:
+    sys.path.insert(1, directory2)
 test(args)
