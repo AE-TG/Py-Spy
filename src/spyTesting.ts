@@ -4,23 +4,12 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 
 
-// !! IMPORTANT !!
-// It is on the calling function to provide only a set of inputs for which spyCompile has already built pycache files!
-// Otherwise testing will fail because we don't make bytecode for marshaling to run on here in order to save effort.
-// TODO There is a relevant note in spyMarshal.py to reflect this now that we are also passing the source file name.
 export function generateTestResults(decoFunctions: spyUI.spyDeco[]) {
     let cfg = vscode.workspace.getConfiguration("spy");
     let doTests = cfg.get("TestingEnabled", false);
 
     if (doTests) {
-        if (decoFunctions.length == 0)
-        {
-            // wait for UI to find tagged functions
-            // TODO
-            //setTimeout(spyUI.getSpyDecos, 2000);
-            //setTimeout(runTests, 2050, spyUI.getSpyDecos());
-        }
-        else
+        if (decoFunctions.length > 0)
         {
             type testDict = { [file: string] : number[] }
             let files: testDict = {}
@@ -46,6 +35,27 @@ export function generateTestResults(decoFunctions: spyUI.spyDeco[]) {
     }
 }
 
+let testReports : [string, number, string][] = []
+export function addTestReportHover(filename: string, line: number, info: string) {
+    testReports.push([filename, line, info])
+}
+function clearTestReportHovers(filename: string) {
+    testReports = testReports.filter((doc) => doc[0] != filename);
+}
+export function getTestReportHovers(filename: string, line: number) : string | undefined {
+    const matches = testReports.filter((doc) => doc[0] == filename && doc[1] == (line + 1))
+    if (matches.length > 0)
+    {
+        let rv = ""
+        matches.forEach(report => {
+            rv += report[2]
+            rv += "  \n"
+        });
+        return rv;
+    }
+    return undefined;
+}
+
 export async function deleteTestCache() {
     const name_glob = "**/*.py*.covjson"
     const files = await vscode.workspace.findFiles(name_glob);
@@ -55,7 +65,7 @@ export async function deleteTestCache() {
     }
 }
 
-async function parseCovReport(filename: string, decoFunctions: spyUI.spyDeco[]) {
+export async function parseCovReport(filename: string, decoFunctions: spyUI.spyDeco[]) {
     const name = filename + ".covjson"
     try {
         const covjson: string = fs.readFileSync(name).toString();
@@ -82,7 +92,7 @@ async function parseCovReport(filename: string, decoFunctions: spyUI.spyDeco[]) 
 
         const td = await vscode.workspace.openTextDocument(filename);
         spyUI.resetCoverageDecoLists(td);
-            for(var line of exec_lines) {
+        for(var line of exec_lines) {
             var deco: spyUI.spyDeco = [td, td.lineAt(line - 1).range, line - 1]
             spyUI.addCoverageDeco(deco, true);
         }
@@ -92,12 +102,12 @@ async function parseCovReport(filename: string, decoFunctions: spyUI.spyDeco[]) 
         }
     }
     catch {
-        console.warn("Unable to apply coverage test highlights - coverage report " + filename + " not found.");
+        console.warn("Unable to apply coverage test highlights - coverage report " + name + " not found.");
     }
 }
 
 // Credit: https://stackoverflow.com/questions/69735241/typescript-find-values-of-certain-keys-in-json
-// For a json object o, return all values of keys named key.
+// For a json object obj, return all values of keys named key.
 function find(obj: object, key: string) {
     const ret: any[] = [];
     JSON.stringify(obj, (_, nested) => {
@@ -107,4 +117,4 @@ function find(obj: object, key: string) {
       return nested;
     });
     return ret;
-  };
+};

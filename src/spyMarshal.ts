@@ -1,5 +1,5 @@
 import * as spyFS from './spyFS';
-import * as spyUI from './spyUI';
+import * as spyTesting from './spyTesting';
 import * as vscode from 'vscode';
 import { PythonShell } from 'python-shell'
 
@@ -14,25 +14,33 @@ export function getPyVersion(ctx: vscode.ExtensionContext) {
 export async function coverageTest(filename: string, lines: number[]) {
     let options = {
         scriptPath: xPath,
-        // TODO
-        args: ["-f", filename, "-l"]
+        args: ["-w", spyFS.getFileFromPath(filename)[0],"-f", filename, "-l"]
     };
     lines.forEach(line => {
         options.args.push(String(line))
     });
-    await PythonShell.run("src/spyMarshal.py", options).then(messages => {
+    await PythonShell.run("src/spyCoverage.py", options).then(messages => {
         messages.forEach(msg => {
-            messageHandler(msg);
+            messageHandler(filename, msg);
         });
     });
 }
 
-function messageHandler(msg: string) {
+function messageHandler(filename: string, msg: string) {
     if (msg.startsWith("[E} ")) {
         console.error(msg)
     }
     if (msg.startsWith("[W} ")) {
         console.warn(msg)
+        try {
+            const report = msg.split("Testing function at line ")[1].split(" ")
+            const lineno = parseInt(report[0]);
+            const info = report.slice(1).join(" ")
+            spyTesting.addTestReportHover(filename, lineno, info);
+        }
+        catch {
+            // message from python was not a test report.
+        }
     } 
 }
 

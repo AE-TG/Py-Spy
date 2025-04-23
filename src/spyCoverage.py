@@ -2,6 +2,7 @@ import argparse
 import coverage
 import importlib.machinery
 import marshal
+import os
 import py_compile
 import sys
 import spyInputs
@@ -41,6 +42,7 @@ def get_co(filename, ln):
     """
     code = getcodeobjects(filename)
     for byteline in code.co_consts:
+        print("[W} " + str(byteline))
         if type(byteline) is types.CodeType:
             if (byteline.co_firstlineno == ln):
                 return byteline
@@ -56,9 +58,10 @@ def inputs(code_obj, func):
     return iter
 
 def load_module(args):
-    loader = importlib.machinery.SourceFileLoader('MOT', args.filename)
+    loader = importlib.machinery.SourceFileLoader('__main__', args.filename)
     spec = importlib.util.spec_from_loader(loader.name, loader)
     mod = importlib.util.module_from_spec(spec)
+    print("[W} mod " + str(dir(mod)))
     loader.exec_module(mod)
     return mod
 
@@ -72,9 +75,9 @@ def test(args):
     try:
         mod = load_module(args)
         try:
-            cov = coverage.Coverage(branch=True)
+            cov = coverage.Coverage()
             # exclude comments and exception lines
-            cov.exclude(r"^\s*#.*\n")
+            # cov.exclude(r"^\s*#.*\n")
             cov.exclude(r"\sexcept .* as .*")
             cov.exclude(r"\sexcept:")
             try:
@@ -90,7 +93,7 @@ def test(args):
                             # unary * is the unpack operator in python,
                             # equivalent to ... spread operator in other languages
                         except Exception as ex:
-                            print("[W} Testing throws error with inputs " + str(inputset) + str(ex))
+                            print("[W} Testing function at line " + str(ln) + " " + str(ex) + " error with inputs " + str(inputset))
                 try:
                     cov.json_report(morfs=args.filename, outfile=reportname(args), pretty_print=True)
                 except Exception as ex:
@@ -105,7 +108,9 @@ def test(args):
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-w', '--workspace', dest='workspace', required=True, action='store', type=str) # workspace for module imports
 parser.add_argument('-f', '--file', dest='filename', required=True, action='store', type=str) # python source file
 parser.add_argument('-l', '--lines', dest='evallines', required=True, action='store', type=int, nargs='*') # line number of function(s) under test
 args = parser.parse_args()
+os.chdir(args.workspace)
 test(args)
