@@ -3,7 +3,9 @@
   "displayName": "PySpy",
   "description": "Automated tool for analysing and testing Python code snippets in real time.",
   "icon": "assets/play_512.png",
-  "version": "0.1.2",
+  "version": "0.1.3",
+  "publisher": "AE-TG",
+  "repository": { "type": "git", "url": "https://github.com/AE-TG/Py-Spy.git" },
   "preview": true,
   "engines": {
     "vscode": "^1.96.0"
