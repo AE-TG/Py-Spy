@@ -32,17 +32,35 @@
 - (Optional) **coverage.py** integration
 - (Optional) **PyLint** integration
 
+## Extension Settings
+
+With the extension installed (including in debug sessions built from source), each of these settings can be changed by going to `> File > Preferences > Settings > User > Extensions > PySpy` and changing it in `settings.json`. All of these settings are persisted with your VSCode profile.
+* `spy.AnalysisEnabled`: True/False toggle for built-in immediate static analysis and code linting. Needs to be installed separately with `pip install pylint`. While enabled, **spy** will automatically attempt to display messages from the analysis tool about your tagged function when you hover one such highlight.
+* `spy.RadonInstallLocation`: Path to the Radon executable. Needs to be installed separately with `pip install radon`. A successful install should list the path; note that Windows expects escaped backslashes.
+* `spy.TestingEnabled`: True/False toggle for built-in immediate unit testing. Needs to be installed separately with `pip install coverage`. While enabled, **spy** will automatically attempt to test functions for signature breaks and code coverage, displaying coverage highlights in the traditional red (uncovered) and green (covered) and warning the user about possible errors.
+* `spy.TestingUseDangerousStrings`: True/False toggle; does nothing if `spy.TestingEnabled` is False. While enabled, **spy** will include wildcard strings in test inputs. **If your code does something stupid like `os.system("rm -rf " + inputstring)` then those wildcards will be evaluated and executed.** This setting is disabled by default.
+
+## Building and Running From Source
+
+1. Open a new Visual Studio Code workspace in the repository directory.
+2. Press `F5` to start a new debug session with PySpy running!
+3. (Optional) Check the **Extension Settings** section above for details on how to install and connect **coverage.py** integration.
+4. (Optional) Check the **Extension Settings** section above for details on how to install and connect **PyLint** integration.
+5. (Optional) Check the **Extension Settings** section above for details on how to install and connect **Radon** integration.
+
+**N.B.** If you are trying to modify or extend PySpy, there's an intermittent issue in VSCode's typescript import resolution where it will get stuck complaining that the imported file could not be found - even if it does exist and imported functions are recognized and can be called. Restarting VSCode should resolve this.
+
 ## Implementation Details
 
 As **spy** is a learning experiment for writing VSCode extensions, it's worth documenting how it works.
-#### 1. Extension Setup
+### 1. Extension Setup
 - The extension registers itself with an activation event of "onLanguage:python". Thus when VSCode opens a file and loads the user's language spec for python for the first time in a session, `extension.ts::activate()` is executed.
 - `activate()` performs the following things:
     - First time setup (defining some values for later use)
     - Registering UI events (`onDidChangeActiveTextEditor` and `onDidChangeTextDocument`) to run UI updates only when potentially useful
     - Checks for the currently attached version of Python, as several features have version requirements (most stringently is that **coverage.py** requires Python 3.9 or higher).
 
-#### 2. Structure
+### 2. Structure
 - `package.json`: Extension manifest and description
 - `src/extension.ts`: Entrypoint for the extension. Sets up all the event listeners to hook into user actions in VSCode to run **spy** features.
 - `src/spy.ts`: Top-level file for **spy** features. This currently includes the 15-second loop which compiles python files found in the workspace as a basic syntax check.
@@ -57,7 +75,7 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 - `src/spyInputs.py`: Manages the creation of "interesting" inputs for input testing.
 - `src/spyCoverage.py`: Wrapper for coverage and input testing of workspace python code.
 
-#### 3. UI
+### 3. UI
 - Opt-in: only run on files and functions where the user has opted in by adding a `#spy` comment directly before a function. If you want the features, it's right there.
 - Whenever the user opens an editor while the extension is active or completes some typing task, these indicators for open editors are updated. This gives a good balance between responsiveness and performance - no updates are being performed while the user is actively coding in the workspace, but as soon as the user stops the updates will trigger for immediate feedback.
 - Featuring:
@@ -68,13 +86,13 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
     - Unobtrusive red line highlight to indicate lack of code coverage on `#spy`-tagged functions.
 - UI calculations are actually doing a lot of work behind the scenes. A list of all of the `#spy` tags and their locations is maintained and that list is what the rest of the code uses to determine what other tools to run and what or where to attach mouseover tooltips to. This is the `spyDecoList` in `spyUI.ts` and every time a relevant user event triggers `updateDecorations()` this list is rebuilt from open text editors to keep processing time low.
 
-#### 4. Analysis
+### 4. Analysis
 - **PyLint** is perhaps the leading Python source linter and static analysis tool. Although not immensely complicated on it's own, it's still a powerful tool and especially so for Python where formatting and whitespace is syntactically signficant.
 - Both **PyLint** and **Radon** integrations are set up by executing those tools from a hidden `Terminal` in the IDE, saving the output to disk, then opening that output and parsing it into decorations to add to the UI when the relevant `HoverProvider` request is made. The exact methods of action are slightly different; `src/spyAnalysis.ts` (for **PyLint**) piggybacks on an in-memory list of test report feedback from the testing tools which are searched and served on mouseover, whereas `src/spyStatistics.ts` (for **Radon**, implemented first) checks for the existence of a Radon cache file and reads it when the mouseover request is made.
 - You may desire to hide test output files from your VSCode workspace. Analysis test reports are currently written to the workspace directory; you can edit your user settings to ignore ".pylintjson" files by following the configuration steps here: https://code.visualstudio.com/docs/configure/settings or by nullifying them in the `.vscodeignore` file by adding the line "**.pylintjson".
 
-#### 5. Testing
-###### The driving feature behind this whole project. Why do we need to waste time writing tests for simple things? Well, if you work for CrowdStrike... https://www.crowdstrike.com/wp-content/uploads/2024/08/Channel-File-291-Incident-Root-Cause-Analysis-08.06.2024.pdf
+### 5. Testing
+##### The driving feature behind this whole project. Why do we need to waste time writing tests for simple things? Well, if you work for CrowdStrike... https://www.crowdstrike.com/wp-content/uploads/2024/08/Channel-File-291-Incident-Root-Cause-Analysis-08.06.2024.pdf
 - **spy** means you should not need to write coverage or boundary condition tests! The core feature of this extension is that it will automatically test your code for failure points related to input edge cases. Testing is automatically performed when you open or save a file that includes a function tagged with `#spy`.
 - Notably, whereas code analysis is performed whenever the file is looked at or saved, tests only run when the file is saved.
 - **spy** uses a different test mechanism than traditional VSCode test tools and extensions because **spy** automatically performs interface and coverage testing. It does **NOT** make any guarantee that your code is correct - it does not check output correctness, only output validity.
@@ -86,7 +104,7 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 - **spy** testing runs alongside other VSCode test tools like the default **pytest** and **unittest**. Those tools still work exactly as they are designed to and **spy** does not interfere with them in any way except for potential code coverage highlighting conflicts. You can disable other test extension coverage highlighting by toggling the `Show Inline Coverage` button (default shortcut: `Ctrl+; Ctrl+Shift+I`) if you prefer **spy**'s automatic testing and highlighting, or you can disable **spy**'s testing and highlighting in the extension settings (details below).
 - You may desire to hide test output files from your VSCode workspace. Coverage test reports are currently written to the workspace directory; you can edit your user settings to ignore ".py.covjson" files by following the configuration steps here: https://code.visualstudio.com/docs/configure/settings or by nullifying them in the `.vscodeignore` file by adding the line "**.py.covjson".
 
-#### 6. Extension to Other Languages
+### 6. Extension to Other Languages
 **spy**, or specifically this flavour **PySpy**, is intended solely for use with Python source code, and the tooling within reflects that. However, it has been intentionally structured in such a way as to (hopefully easily) work for other programming languages by confining the required changes. It's out of the scope of this exercise, but future work would be to split language support into subdirectories of `src/` that each register a separate set of handlers for that programming language - expanding to "*C#Spy*" for instance.
 
 - string constants throughout the extension code would need to be updated for non-python use cases.
@@ -94,28 +112,7 @@ As **spy** is a learning experiment for writing VSCode extensions, it's worth do
 - `spyAnalysis.ts`, `spyStatistics.ts`, and `spyTesting.ts` would need to be reworked to connect with your chosen static analysis, code complexity, and code coverage test tools, respectively.
 Otherwise, things should work as-is; other extension-related files are more focused on tying those features into the skeleton that is the VSCode API to serve up the outputs of those tools in a reasonable manner.
 
-## Extension Settings
-
-* `spy.AnalysisEnabled`: True/False toggle for built-in immediate static analysis and code linting. Needs to be installed separately with `pip install pylint`. While enabled, **spy** will automatically attempt to display messages from the analysis tool about your tagged function when you hover one such highlight.
-  * With the extension installed (including in debug sessions built from source), you can set this by going to `> File > Preferences > Settings > User > Extensions > PySpy` and changing it in `settings.json`.
-  * This setting is persisted with your VSCode profile.
-* `spy.RadonInstallLocation`: Path to the Radon executable. Needs to be installed separately with `pip install radon`. A successful install should list the path; note that Windows expects escaped backslashes.
-  * With the extension installed (including in debug sessions built from source), you can set this by going to `> File > Preferences > Settings > User > Extensions > PySpy` and changing it in `settings.json`.
-  * This setting is persisted with your VSCode profile.
-* `spy.TestingEnabled`: True/False toggle for built-in immediate unit testing. Needs to be installed separately with `pip install coverage`. While enabled, **spy** will automatically attempt to test functions for signature breaks and code coverage, displaying coverage highlights in the traditional red (uncovered) and green (covered) and warning the user about possible errors.
-  * With the extension installed (including in debug sessions built from source), you can set this by going to `> File > Preferences > Settings > User > Extensions > PySpy` and changing it in `settings.json`.
-  * This setting is persisted with your VSCode profile.
-
-## Building and Running From Source
-1. Open a new Visual Studio Code workspace in the repository directory.
-2. Press `F5` to start a new debug session with PySpy running!
-3. (Optional) Check the **Extension Settings** section above for details on how to install and connect **coverage.py** integration.
-4. (Optional) Check the **Extension Settings** section above for details on how to install and connect **PyLint** integration.
-5. (Optional) Check the **Extension Settings** section above for details on how to install and connect **Radon** integration.
-
-**N.B.** If you are trying to modify or extend PySpy, there's an isssue in VSCode's typescript import resolution where it will get stuck complaining that the imported file could not be found - even if it does exist and imported functions are recognized and can be called. Restarting VSCode should resolve this.
-
-## Lessons Learned
+# Lessons Learned
 1. The underlying structure of VSCode (at least, as exposed through it's API) is not IDE-focused but rather view-focused.
     - While not immediately obvious, the API (and what I understand of the extension management and lifecycle management of the program itself) makes it clear that VSCode is more or less just a collection of Electron webviews.
         - Debugging console? That's a browser.
