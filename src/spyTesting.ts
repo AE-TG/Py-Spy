@@ -37,7 +37,9 @@ export function generateTestResults(decoFunctions: spyUI.spyDeco[]) {
 
 let testReports : [string, number, string][] = []
 export function addTestReportHover(filename: string, line: number, info: string) {
-    testReports.push([filename, line, info])
+    if (!testReports.find(r => r[0] == filename && r[1] == line && r[2] == info)) {
+        testReports.push([filename, line, info])
+    }
 }
 export function clearTestReportHovers(filename: string) {
     testReports = testReports.filter((doc) => doc[0] != filename);
@@ -63,6 +65,7 @@ export async function deleteTestCache() {
         console.log("PySpy: removing coverage cache for " + file.toString());
         vscode.workspace.fs.delete(file);
     }
+    testReports = [];
 }
 
 export async function parseCovReport(filename: string, decoFunctions: spyUI.spyDeco[]) {

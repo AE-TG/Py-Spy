@@ -11,19 +11,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Run updates once
 	spy.scanUI(context);
-	spy.scanCC();
+	spy.scanCC(context, vscode.window.activeTextEditor?.document);
 
 	// Register events
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		if (editor) {
 			spy.scanUI(context);
-			spy.scanCC();
-		}
-	}, null, context.subscriptions);
-	vscode.workspace.onDidOpenTextDocument(event => {
-		if (event.fileName) {
-			spy.scanUI(context);
-			spy.scanCC(context, event);
+			spy.scanCC(context, editor.document);
 		}
 	}, null, context.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(event => {

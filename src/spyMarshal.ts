@@ -31,7 +31,16 @@ export async function coverageTest(filename: string, lines: number[]) {
 function testMessageHandler(filename: string, msg: string) {
     if (msg.startsWith("[E} ")) {
         console.error(msg)
-        // TODO - if we get a serious error, consider finding a way to addTestReportHover tag for each function in the file
+        try {
+            const report = msg.split(" ")
+            const lineno = parseInt(report[1]);
+            const info = report.slice(2).join(" ")
+            spyTesting.addTestReportHover(filename, lineno, info);
+        }
+        catch {
+            // serious error not attached to a line number - alert user
+            vscode.window.showErrorMessage(msg.substring(4));
+        }
     }
     if (msg.startsWith("[W} ")) {
         console.warn(msg)
@@ -45,4 +54,7 @@ function testMessageHandler(filename: string, msg: string) {
             // message from python was not a test report.
         }
     } 
+    if (msg.startsWith("[I} ")) {
+        console.log(msg)
+    }
 }

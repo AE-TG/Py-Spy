@@ -1,5 +1,4 @@
 import * as spyFS from './spyFS';
-import * as spyTesting from './spyTesting';
 import * as spyUI from './spyUI';
 import * as vscode from 'vscode';
 import fs from 'fs';
@@ -27,6 +26,7 @@ export function generateAnalysisResults(file: string) {
                     console.log("PySpy found old code analysis file, removing " + outputname);
                     vscode.workspace.fs.delete(vscode.Uri.file(fulloutputname));
                 }
+                clearAnalysisReportHovers(file);
                 term.sendText('cd ' + path, true);
                 term.sendText('pylint --output-format=json ' + filename + " > " + outputname);
                 setTimeout(parsePylintReport, 1000, file);
@@ -47,6 +47,30 @@ export async function deleteCache() {
         console.log("PySpy: removing analysis cache for " + file.toString());
         vscode.workspace.fs.delete(file);
     }
+    analysisReports = [];
+}
+
+let analysisReports : [string, number, string][] = []
+function addAnalysisReportHover(filename: string, line: number, info: string) {
+    if (!analysisReports.find(r => r[0] == filename && r[1] == line && r[2] == info)) {
+        analysisReports.push([filename, line, info])
+    }
+}
+function clearAnalysisReportHovers(filename: string) {
+    analysisReports = analysisReports.filter((doc) => doc[0] != filename);
+}
+export function getAnalysisReportHovers(filename: string, line: number) : string | undefined {
+    const matches = analysisReports.filter((doc) => doc[0] == filename && doc[1] == (line + 1))
+    if (matches.length > 0)
+    {
+        let rv = ""
+        matches.forEach(report => {
+            rv += report[2]
+            rv += "  \n"
+        });
+        return rv;
+    }
+    return undefined;
 }
 
 async function parsePylintReport(file: string, retry: number = 0) {
@@ -71,7 +95,7 @@ async function parsePylintReport(file: string, retry: number = 0) {
                     // TODO pylint config / rules filtering?
                     if (deco[1].contains(new vscode.Position(issue["line"] - 1, 0))) {
                         // this issue belongs to this deco (and the tagged fn it represents)
-                        spyTesting.addTestReportHover(file, deco[2] + 1, "Line " + issue["line"] + ": " + issue["message"]);
+                        addAnalysisReportHover(file, deco[2] + 1, "Line " + issue["line"] + ": " + issue["message"]);
                     }
                 }
             });
