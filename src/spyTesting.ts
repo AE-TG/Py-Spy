@@ -7,6 +7,7 @@ import fs from 'fs';
 export function generateTestResults(decoFunctions: spyUI.spyDeco[]) {
     let cfg = vscode.workspace.getConfiguration("spy");
     let doTests = cfg.get("TestingEnabled", false);
+    let dangerousTests = cfg.get("TestingUseDangerousStrings", false);
 
     if (doTests) {
         if (decoFunctions.length > 0)
@@ -23,7 +24,7 @@ export function generateTestResults(decoFunctions: spyUI.spyDeco[]) {
             }
             for (var file in files) {
                 try {
-                    spyMarshal.coverageTest(file, files[file]);
+                    spyMarshal.coverageTest(file, files[file], dangerousTests);
                 }
                 catch {
                     // If you made it here, you somehow crashed the spyMarshal/PythonShell interpreter itself.

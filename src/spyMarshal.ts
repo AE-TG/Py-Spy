@@ -12,11 +12,14 @@ export function getPyVersion(ctx: vscode.ExtensionContext) {
     return versionParts[0] + versionParts[1];
 }
 
-export async function coverageTest(filename: string, lines: number[]) {
+export async function coverageTest(filename: string, lines: number[], danger: boolean) {
     let options = {
         scriptPath: xPath,
-        args: ["-w", spyFS.getFileFromPath(filename)[0],"-f", filename, "-l"]
+        args: ["-w", spyFS.getFileFromPath(filename)[0], "-f", filename, "-l"]
     };
+    if (danger) {
+        options.args.splice(4, 0, "-d");
+    }
     lines.forEach(line => {
         options.args.push(String(line))
     });

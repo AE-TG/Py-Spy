@@ -52,7 +52,7 @@ def typehints(code_obj, func):
     return (typelist, intlist, floatlist, strlist)
 
 
-def generate_inputs(args, ints=[], floats=[], strs=[]):
+def generate_inputs(args, ints=[], floats=[], strs=[], dangerous_strings=False):
     """
     For each element in the input arguments, attempt to determine its type.
     Returns a list with length matching the number of input arguments,
@@ -89,13 +89,16 @@ def generate_inputs(args, ints=[], floats=[], strs=[]):
             floattypes.extend(list(map(lambda x: x - sys.float_info.epsilon, floats)))
             outputs.append(floattypes)
         elif (arg is str or type(arg) is str):
-            strtypes = ["", "'", "\r\n", "\n", "admin", "password", "12345", "\0", "\0foo", "\\", "\u0394", "a\xac\u1234\u20ac\U00008000"]
+            strtypes = ["", "'", "\"", "\r\n", "\n", "admin", "password", "12345", "\0", "\0foo", "\\", "\u0394", "a\xac\u1234\u20ac\U00008000", "None", "null", "False", "True"]
             strtypes.extend(strs)
             strtypes.extend(list(map(lambda x: str(x), ints)))
             strtypes.extend(list(map(lambda x: str("x"*x), ints)))
             strtypes.extend(list(map(lambda x: str("x"*(x + 1)), ints)))
             strtypes.extend(list(map(lambda x: str("x"*(x - 1)), ints)))
             # Mangling string literals is unlikely to provide additional useful values to test, so don't do anything weird with the special test values.
+            if (dangerous_strings):
+                danger_strs = ["*", "**", "*.*", "**.**", "**/**", ".*", "(.*)", "(?s).*", "[^]*", "[\s\S]*"]
+                strtypes.extend(danger_strs)
             outputs.append(strtypes)
         else: # attempt to default construct the type
             t = None
