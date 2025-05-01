@@ -156,6 +156,9 @@ function extractLineNumbers(lines: string) {
 
 function radonHalFunctionFilter(lines: string, fName: string|undefined, fWhich: number) : string[] {
     if (fName) {
+        fName = fName.split(".").at(-1)
+    }
+    if (fName) {
         const regex = new RegExp('('+fName+':\\s+h1:.*\\s+h2:.*\\s+N1:.*\\s+N2:.*\\s+vocabulary:.*\\s+length:.*\\s+calculated_length:.*\\s+volume:.*\\s+difficulty:.*\\s+effort:.*\\s+time:.*\\s+bugs:.*)', 'gm');
         const matches = lines.matchAll(regex);
         // matchAll returns a custom, incomplete iterator over an REEA-type, which is

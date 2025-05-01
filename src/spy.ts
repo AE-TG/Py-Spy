@@ -32,7 +32,6 @@ export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument)
         spyUI.updateDecorations(0);
         if (doc.fileName.endsWith(".py")) {
             spyStatistics.generateRadonCache([doc.fileName]);
-            //spyCompile.build(doc.fileName); // let coverage testing compile instead
             spyAnalysis.generateAnalysisResults(doc.fileName);
             spyTesting.generateTestResults(spyUI.getSpyDecos(doc));
         }
@@ -40,11 +39,9 @@ export function scanCC(ctx?: vscode.ExtensionContext, doc?: vscode.TextDocument)
     }
     else {
         const spySet = spyFS.getSpyFiles();
-        spyStatistics.generateRadonCache(spySet);
         spySet.forEach(file => {
-            //spyCompile.build(file); // let coverage testing compile instead
+            spyCompile.build(file);
         });
-        spyTesting.generateTestResults([]);
         spyUI.updateDecorations(2000);
     }
 }
@@ -74,7 +71,7 @@ export function provideTestingHover(file: vscode.TextDocument, pos: vscode.Posit
     for (let highlight of spyUI.getSpyDecos(file)) {
         if (spyUI.getFnTagRange(highlight[0], highlight[1]).contains(pos)) {
             return new Promise<vscode.Hover>((resolve, reject) => {
-                const str = spyTesting.getTestReportHovers(file.fileName, pos.line + 1); // line is zero-indexed
+                const str = getAllReportHovers(file, pos.line + 1); // position line numbers are 0-indexed, report line numbers are 1-indexed
                 if (str)
                 {
                     resolve(new vscode.Hover(str, highlight[1]));
@@ -85,4 +82,19 @@ export function provideTestingHover(file: vscode.TextDocument, pos: vscode.Posit
         }
     };
     return undefined;
+}
+
+function getAllReportHovers(file: vscode.TextDocument, line: number) {
+    let hovertext: string[] = []
+    
+    const testReports = spyTesting.getTestReportHovers(file.fileName, line);
+    if (testReports) {
+        hovertext.push(testReports)
+    }
+    const analysisReports = spyAnalysis.getAnalysisReportHovers(file.fileName, line);
+    if (analysisReports) {
+        hovertext.push(analysisReports)
+    }
+    
+    return hovertext.join("  \n");
 }
