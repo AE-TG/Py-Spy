@@ -103,8 +103,8 @@ function applyDecorations(checkTests?:boolean) {
 
             // #spy tag highlights
             for(var lineIndex = 1; lineIndex < doc.lineCount; lineIndex++) {
-                if (doc.lineAt(lineIndex).text.startsWith("def ")) {
-                    if (doc.lineAt(lineIndex - 1).text.startsWith("#spy")) {
+                if (doc.lineAt(lineIndex).text.trim().startsWith("def ")) {
+                    if (doc.lineAt(lineIndex - 1).text.trim().startsWith("#spy")) {
                         console.log("spyUI found tag on line " + (lineIndex - 1));
                         const range = getTagFnRange(doc, lineIndex);
                         spyDecoList.push([doc, range, lineIndex]);
