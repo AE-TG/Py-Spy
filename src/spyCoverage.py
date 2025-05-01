@@ -13,13 +13,22 @@ import types
 sys.stdin.reconfigure(encoding='utf-8')
 sys.stdout.reconfigure(encoding='utf-8')
 
-def getcodeobjects(filename):
+_loaded_obj = None
+
+def getcodeobjects(filename, retry = 2):
+    # avoid loading the object multiple times
+    global _loaded_obj
+    if _loaded_obj:
+        return _loaded_obj
+    
     pycfile = ""
     try:
         pycfile = py_compile.compile(filename, doraise=True)
     except Exception as ex:
         print("[E} Unable to load compile pycfile " + str(ex))
-        time.sleep(0.2) # either the file does not compile (syntax error), or some other process is using it. wait a fraction to hope it gives it up.
+        if (retry > 0):
+            time.sleep(0.2)
+            return getcodeobjects(filename, retry - 1)
     try:
         with open(pycfile, 'rb') as pyc:
             seek_bytes = 8
@@ -33,9 +42,13 @@ def getcodeobjects(filename):
             # python 3.8+ requires 16 bytes
             
             code_obj = marshal.load(pyc)
+            _loaded_obj = code_obj
             return code_obj
     except Exception as ex:
         print("[E} Unable to load pyc file " + pycfile + str(ex))
+        if (retry > 0):
+            time.sleep(0.2)
+            return getcodeobjects(filename, retry - 1)
 
 def get_co(filename, ln):
     """
@@ -85,11 +98,10 @@ def test(args):
             # cov.exclude(r"^\s*#.*\n")
             cov.exclude(r"\sexcept .* as .*")
             cov.exclude(r"\sexcept:")
-            for ln in args.evallines:
-                # iterate over inputs
+            for ln in args.evallines: # for each function under test
                 try:
                     co_ = get_co(args.filename, ln)
-                    for inputset in inputs(co_, getattr(mod, co_.co_name)):
+                    for inputset in inputs(co_, getattr(mod, co_.co_name)): # iterate over inputs
                         try:
                             # run the code
                             cov.start()
@@ -102,10 +114,11 @@ def test(args):
                 except Exception as ex:
                     print("[E} " + str(ln) + " Could not generate inputs for test. Function under test may not have been found. " + str(ex))
             try:
+                time.sleep(0.2)
                 cov.json_report(morfs=args.filename, outfile=reportname(args), pretty_print=True)
             except Exception as ex:
-                print("[E} " + str(ln) + " Coverage was unable to output summaryfile. " + str(ex))
-                return
+                for ln in args.evallines:
+                    print("[E} " + str(ln) + " Coverage was unable to output summaryfile. " + str(ex))
         except Exception as ex:
             print("[E} Could not start coverage.py for testing. Is it installed? " + str(ex))
     except Exception as ex:

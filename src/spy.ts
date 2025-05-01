@@ -54,6 +54,8 @@ export async function deleteCache() {
     await spyAnalysis.deleteCache();
     await spyTesting.deleteTestCache();
     await spyStatistics.deleteRadonCache(spySet);
+    spyUI.resetCoverageDecoLists();
+    spyUI.updateDecorations(0);
 }
 
 export function provideComplexityHover(file: vscode.TextDocument, pos: vscode.Position, cancel: vscode.CancellationToken) : vscode.ProviderResult<vscode.Hover> {

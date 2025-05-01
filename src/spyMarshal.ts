@@ -54,4 +54,7 @@ function testMessageHandler(filename: string, msg: string) {
             // message from python was not a test report.
         }
     } 
+    if (msg.startsWith("[I} ")) {
+        console.log(msg)
+    }
 }

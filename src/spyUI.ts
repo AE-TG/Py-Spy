@@ -200,6 +200,7 @@ function getIndent(text: string) : number {
 
 export function removeDecorations() {
     vscode.window.visibleTextEditors.forEach(ed => {
+        ed.setDecorations(pinkUnknownHighlight, []);
         ed.setDecorations(pinkPassHighlight, []);
         ed.setDecorations(pinkFailHighlight, []);
         ed.setDecorations(greenFaintHighlight, []);
