@@ -61,13 +61,13 @@ def get_co(filename, ln):
             if (byteline.co_firstlineno == ln):
                 return byteline
 
-def inputs(code_obj, func):
+def inputs(code_obj, func, danger: bool):
     """
     Helper function to get all possible interesting input combinations to test
     from spyInputs.py
     """
     (typelist, intlist, floatlist, strlist) = spyInputs.typehints(code_obj, func)
-    allinputs = spyInputs.generate_inputs(typelist, ints=intlist, floats=floatlist, strs=strlist)
+    allinputs = spyInputs.generate_inputs(typelist, ints=intlist, floats=floatlist, strs=strlist, dangerous_strings=danger)
     iter = spyInputs.input_iterator(allinputs)
     return iter
 
@@ -101,7 +101,7 @@ def test(args):
             for ln in args.evallines: # for each function under test
                 try:
                     co_ = get_co(args.filename, ln)
-                    for inputset in inputs(co_, getattr(mod, co_.co_name)): # iterate over inputs
+                    for inputset in inputs(co_, getattr(mod, co_.co_name), args.danger): # iterate over inputs
                         try:
                             # run the code
                             cov.start()
@@ -129,6 +129,7 @@ def test(args):
 parser = argparse.ArgumentParser()
 parser.add_argument('-w', '--workspace', dest='workspace', required=True, action='store', type=str) # workspace for module imports
 parser.add_argument('-f', '--file', dest='filename', required=True, action='store', type=str) # python source file
+parser.add_argument('-d', '--danger', dest='danger', action='store_true') # enable "dangerous string" testing
 parser.add_argument('-l', '--lines', dest='evallines', required=True, action='store', type=int, nargs='*') # line number of function(s) under test
 args = parser.parse_args()
 os.chdir(args.workspace)

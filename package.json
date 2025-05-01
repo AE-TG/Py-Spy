@@ -3,7 +3,7 @@
   "displayName": "PySpy",
   "description": "Automated tool for analysing and testing Python code snippets in real time.",
   "icon": "assets/play_512.png",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "preview": true,
   "engines": {
     "vscode": "^1.96.0"
@@ -42,6 +42,11 @@
           "type": "boolean",
           "default": true,
           "description": "Whether or not to attempt interface and coverage testing for tagged functions."
+        },
+        "spy.TestingUseDangerousStrings": {
+          "type": "boolean",
+          "default": false,
+          "description": "If testing is enabled, whether or not to include wildcard strings that could cause harm to the system or test results."
         }
       }
     }
